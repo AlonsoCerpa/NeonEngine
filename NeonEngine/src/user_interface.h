@@ -5,8 +5,7 @@
 #include <imgui.h>
 #include <mutex>
 
-class Input;
-struct GLFWwindow;
+class NeonEngine;
 
 class UserInterface {
 public:
@@ -17,17 +16,9 @@ public:
     void operator=(const UserInterface&) = delete;
 
     void initialize();
-    int setup_glfw();
-    int setup_glad();
     void setup_imgui();
     void render_ui();
-    void clean_gflw();
     void clean_imgui();
-
-    GLFWwindow* window;
-    ImVec4 clear_color;
-    int window_width;
-    int window_height;
 
 private:
     UserInterface();
@@ -35,11 +26,7 @@ private:
 
     void set_ui_style();
 
-    Input* input;
-    int glfw_major_version;
-    int glfw_minor_version;
-    const char* glsl_version;
-    const char* window_title;
+    NeonEngine* neon_engine;
 
     static UserInterface* instance;
     static std::mutex user_interface_mutex;

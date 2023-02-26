@@ -1,6 +1,6 @@
 #include "user_interface.h"
 
-#include "input.h"
+#include "neon_engine.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -20,14 +20,7 @@ void UserInterface::glfw_error_callback(int error, const char* description)
 }
 
 UserInterface::UserInterface() {
-    window = nullptr;
-    glfw_major_version = 3;
-    glfw_minor_version = 3;
-    glsl_version = "#version 330";
-    window_title = "Neon Engine";
-    window_width = 1920;
-    window_height = 1080;
-    clear_color = ImVec4(1.0, 0.1, 0.1, 1.0);
+    neon_engine = nullptr;
 }
 
 UserInterface::~UserInterface() {
@@ -44,46 +37,7 @@ UserInterface* UserInterface::get_instance()
 }
 
 void UserInterface::initialize() {
-    input = Input::get_instance();
-    input->initialize();
-}
-
-int UserInterface::setup_glfw() {
-    glfwSetErrorCallback(UserInterface::glfw_error_callback);
-    if (!glfwInit())
-        return 1;
-
-    // GL 3.0 + GLSL 130
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glfw_major_version);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glfw_minor_version);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-
-    // Create window with graphics context
-    window = glfwCreateWindow(window_width, window_height, window_title, NULL, NULL);
-    if (window == NULL) {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    glfwSetFramebufferSizeCallback(window, Input::framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, Input::mouse_callback);
-    glfwSetScrollCallback(window, Input::scroll_callback);
-
-    // tell GLFW to capture our mouse
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    glfwSwapInterval(1); // Enable vsync
-    return 0;
-}
-
-int UserInterface::setup_glad() {
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-    return 0;
+    neon_engine = NeonEngine::get_instance();
 }
 
 void UserInterface::set_ui_style() {
@@ -165,8 +119,8 @@ void UserInterface::setup_imgui() {
     set_ui_style();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    ImGui_ImplGlfw_InitForOpenGL(neon_engine->window, true);
+    ImGui_ImplOpenGL3_Init(neon_engine->glsl_version);
 }
 
 void UserInterface::render_ui() {
@@ -243,6 +197,8 @@ void UserInterface::render_ui() {
     }
 
     ImGui::Begin("Viewport");
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    //ImGui::GetWindowDrawList()->AddImage((void*)f_tex, pos, ImVec2(pos.x + 512, pos.y + 512), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::Text("This is some useful text.");
     ImGui::End();
 
@@ -268,9 +224,4 @@ void UserInterface::clean_imgui() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-}
-
-void UserInterface::clean_gflw() {
-    glfwDestroyWindow(window);
-    glfwTerminate();
 }

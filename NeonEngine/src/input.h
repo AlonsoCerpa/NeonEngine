@@ -3,12 +3,12 @@
 #include <mutex>
 
 class NeonEngine;
-class UserInterface;
 struct GLFWwindow;
 
 class Input {
 public:
     static Input* get_instance();
+    void processInput();
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -24,7 +24,6 @@ private:
     static bool firstMouse;
     static float lastX;
     static float lastY;
-    static UserInterface* user_interface;
     static NeonEngine* neon_engine;
 
     static Input* instance;
