@@ -3,11 +3,8 @@
 #include "user_interface.h"
 #include "input.h"
 #include "camera.h"
-#include "viewport.h"
+#include "rendering.h"
 
-// Includes to load and draw a model
-#include "shader.h"
-#include "model.h"
 #include <stb_image.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -35,12 +32,10 @@ NeonEngine::NeonEngine() {
     window_width = 1920;
     window_height = 1080;
     clear_color = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
-
-    camera_viewport = Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
-    viewport_width = 800;
-    viewport_height = 600;
+    
     deltaTime = 0.0f;
     lastFrame = 0.0f;
+    firstMouse = true;
 }
 
 NeonEngine::~NeonEngine() {
@@ -50,9 +45,11 @@ NeonEngine::~NeonEngine() {
 void NeonEngine::initialize_all_components() {
     user_interface = UserInterface::get_instance();
     input = Input::get_instance();
+    rendering = Rendering::get_instance();
 
     user_interface->initialize();
     input->initialize();
+    rendering->initialize();
 }
 
 NeonEngine* NeonEngine::get_instance()
@@ -84,9 +81,7 @@ int NeonEngine::setup_glfw() {
     }
     glfwMakeContextCurrent(window);
 
-    glfwSetFramebufferSizeCallback(window, Input::framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, Input::mouse_callback);
-    glfwSetScrollCallback(window, Input::scroll_callback);
+    //glfwSetFramebufferSizeCallback(window, Input::framebuffer_size_callback);
 
     // tell GLFW to capture our mouse
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -131,12 +126,12 @@ int NeonEngine::run() {
     // configure global opengl state
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile shaders
-    Shader ourShader("src/model_loading.vert", "src/model_loading.frag");
 
-    // load models
-    // -----------
-    Model ourModel("models/backpack/backpack.obj");
+    rendering->set_viewport_shaders();
+
+
+    rendering->set_viewport_models();
+    
 
     /*
     const char* vertexShaderSource = "#version 330 core\n"
@@ -162,8 +157,7 @@ int NeonEngine::run() {
 
     unsigned int shaderProgram = compile_shaders(vertexShaderSource, fragmentShaderSource);
     unsigned int VAO = create_and_set_vao(vertex_data, size_vertex_data);*/
-    unsigned int framebuffer, textureColorbuffer;
-    render_to_framebuffer(&framebuffer, &textureColorbuffer);
+    
 
     while (!glfwWindowShouldClose(window))
     {
@@ -172,7 +166,7 @@ int NeonEngine::run() {
         lastFrame = currentFrame;
 
         // input
-        input->processInput();
+        //input->processInput();
 
         glfwPollEvents();
 
@@ -196,41 +190,11 @@ int NeonEngine::run() {
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
 
-        glViewport(0, 0, viewport_width, viewport_height);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-        glClearColor(1.0f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
-
-        ourShader.use();
-
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera_viewport.Zoom), (float)viewport_width / (float)viewport_height, 0.1f, 100.0f);
-        glm::mat4 view = camera_viewport.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
 
 
         user_interface->render_ui();
-
-        ImGui::Begin("Aux viewport");
-        ImVec2 pos1 = ImGui::GetCursorScreenPos();
-        ImVec2 pos2(pos1.x + 800, pos1.y + 600);
-        //ImVec2 pos2(pos1.x + window_width / 2.0f, pos1.y + window_height / 2);
-        ImGui::GetWindowDrawList()->AddImage((void*)textureColorbuffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
-        ImGui::Text("This is some useful text.");
-        ImGui::End();
-
 
 
         // Rendering
@@ -254,10 +218,10 @@ int NeonEngine::run() {
     }
 
     // Cleanup
+    rendering->clean();
     user_interface->clean_imgui();
 
     clean_gflw();
-
 
     return 0;
 }

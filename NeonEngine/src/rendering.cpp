@@ -1,8 +1,100 @@
-#include "viewport.h"
+#include "rendering.h"
 
-#include "glad/glad.h"
+#include "camera.h"
+#include "shader.h"
+#include "model.h"
+#include "user_interface.h"
 
-#include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+Rendering* Rendering::instance = nullptr;
+std::mutex Rendering::rendering_mutex;
+
+Rendering::Rendering() {
+    ourShader = nullptr;
+    ourModel = nullptr;
+    camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
+}
+
+Rendering::~Rendering() {
+
+}
+
+Rendering* Rendering::get_instance()
+{
+    std::lock_guard<std::mutex> lock(rendering_mutex);
+    if (instance == nullptr) {
+        instance = new Rendering();
+    }
+    return instance;
+}
+
+void Rendering::initialize() {
+    user_interface = UserInterface::get_instance();
+}
+
+void Rendering::render_viewport() {
+    int viewport_width = user_interface->viewport_width;
+    int viewport_height = user_interface->viewport_height;
+    glViewport(0, 0, viewport_width, viewport_height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glClearColor(1.0f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
+
+    ourShader->use();
+
+    // view/projection transformations
+    glm::mat4 projection = glm::perspective(glm::radians(camera_viewport->Zoom), (float)viewport_width / (float)viewport_height, 0.1f, 100.0f);
+    glm::mat4 view = camera_viewport->GetViewMatrix();
+    ourShader->setMat4("projection", projection);
+    ourShader->setMat4("view", view);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+    ourShader->setMat4("model", model);
+    ourModel->Draw(*ourShader);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Rendering::set_viewport_shaders() {
+    // build and compile shaders
+    ourShader = new Shader("src/model_loading.vert", "src/model_loading.frag");
+}
+
+void Rendering::set_viewport_models() {
+    // load models
+    ourModel = new Model("models/backpack/backpack.obj");
+}
+
+void Rendering::create_and_set_viewport_framebuffer() {
+    int viewport_width = user_interface->viewport_width;
+    int viewport_height = user_interface->viewport_height;
+    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &rboDepthStencil, viewport_width, viewport_height);
+}
+
+void Rendering::clean() {
+    delete ourShader;
+    delete ourModel;
+    delete camera_viewport;
+}
+
+void Rendering::clean_viewport_framebuffer() {
+    glDeleteFramebuffers(1, &framebuffer);
+    glDeleteTextures(1, &textureColorbuffer);
+    glDeleteRenderbuffers(1, &rboDepthStencil);
+}
 
 unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource) {
     // build and compile our shader program
@@ -72,11 +164,11 @@ unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data) {
     return VAO;
 }
 
-void render_to_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer) {
-    int color_texture_width = 800;
-    int color_texture_height = 600;
-    int depth_stencil_rbo_width = 800;
-    int depth_stencil_rbo_height = 600;
+void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* rboDepthStencil, int width, int height) {
+    int color_texture_width = width;
+    int color_texture_height = height;
+    int depth_stencil_rbo_width = width;
+    int depth_stencil_rbo_height = height;
 
     // Create and bind Framebuffer
     glGenFramebuffers(1, framebuffer);
@@ -94,14 +186,13 @@ void render_to_framebuffer(unsigned int* framebuffer, unsigned int* textureColor
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *textureColorbuffer, 0);
 
     // Create and set Depth and Stencil Renderbuffer
-    unsigned int rbo;
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glGenRenderbuffers(1, rboDepthStencil);
+    glBindRenderbuffer(GL_RENDERBUFFER, *rboDepthStencil);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, depth_stencil_rbo_width, depth_stencil_rbo_height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     // Attach the Renderbuffer to the currently bound Gramebuffer object
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *rboDepthStencil);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;

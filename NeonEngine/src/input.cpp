@@ -1,16 +1,14 @@
 #include "input.h"
 
 #include "neon_engine.h"
+#include "rendering.h"
+#include "camera.h"
 
 #include <GLFW/glfw3.h>
 #include <mutex>
 
 Input* Input::instance = nullptr;
 std::mutex Input::input_mutex;
-bool Input::firstMouse = true;
-float Input::lastX = 0;
-float Input::lastY = 0;
-NeonEngine* Input::neon_engine = nullptr;
 
 Input::Input() {
     
@@ -31,57 +29,65 @@ Input* Input::get_instance()
 
 void Input::initialize() {
     neon_engine = NeonEngine::get_instance();
-    lastX = (float)(neon_engine->viewport_width / 2.0);
-    lastY = (float)(neon_engine->viewport_height / 2.0);
+    rendering = Rendering::get_instance();
 }
 
-void Input::processInput()
-{
-    if (glfwGetKey(neon_engine->window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(neon_engine->window, true);
-
-    if (glfwGetKey(neon_engine->window, GLFW_KEY_W) == GLFW_PRESS)
-        neon_engine->camera_viewport.ProcessKeyboard(FORWARD, neon_engine->deltaTime);
-    if (glfwGetKey(neon_engine->window, GLFW_KEY_S) == GLFW_PRESS)
-        neon_engine->camera_viewport.ProcessKeyboard(BACKWARD, neon_engine->deltaTime);
-    if (glfwGetKey(neon_engine->window, GLFW_KEY_A) == GLFW_PRESS)
-        neon_engine->camera_viewport.ProcessKeyboard(LEFT, neon_engine->deltaTime);
-    if (glfwGetKey(neon_engine->window, GLFW_KEY_D) == GLFW_PRESS)
-        neon_engine->camera_viewport.ProcessKeyboard(RIGHT, neon_engine->deltaTime);
-}
-
+/*
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void Input::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}*/
+
+void Input::process_viewport_input() {
+    Camera* camera_viewport = rendering->camera_viewport;
+    float& deltaTime = neon_engine->deltaTime;
+    bool& firstMouse = neon_engine->firstMouse;
+    if (ImGui::IsWindowHovered()) {
+        if (ImGui::IsKeyDown(ImGuiKey_W)) {
+            camera_viewport->ProcessKeyboard(FORWARD, deltaTime);
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_S)) {
+            camera_viewport->ProcessKeyboard(BACKWARD, deltaTime);
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_A)) {
+            camera_viewport->ProcessKeyboard(LEFT, deltaTime);
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_D)) {
+            camera_viewport->ProcessKeyboard(RIGHT, deltaTime);
+        }
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            mouse_rotate_camera();
+        }
+    }
+    if (!firstMouse && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+        mouse_rotate_camera();
+    }
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+        firstMouse = true;
+    }
 }
 
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
-void Input::mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+void Input::mouse_rotate_camera() {
+    Camera* camera_viewport = rendering->camera_viewport;
+    bool& firstMouse = neon_engine->firstMouse;
+    float& lastX = neon_engine->lastX;
+    float& lastY = neon_engine->lastY;
+
+    ImVec2 mouse_pos = ImGui::GetMousePos();
     if (firstMouse)
     {
-        lastX = xpos;
-        lastY = ypos;
+        lastX = mouse_pos.x;
+        lastY = mouse_pos.y;
         firstMouse = false;
     }
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float xoffset = mouse_pos.x - lastX;
+    float yoffset = lastY - mouse_pos.y; // reversed since y-coordinates go from bottom to top
 
-    lastX = xpos;
-    lastY = ypos;
+    lastX = mouse_pos.x;
+    lastY = mouse_pos.y;
 
-    neon_engine->camera_viewport.ProcessMouseMovement(xoffset, yoffset);
-}
-
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void Input::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    neon_engine->camera_viewport.ProcessMouseScroll(static_cast<float>(yoffset));
+    camera_viewport->ProcessMouseMovement(xoffset, yoffset);
 }

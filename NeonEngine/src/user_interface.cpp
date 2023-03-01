@@ -1,6 +1,8 @@
 #include "user_interface.h"
 
 #include "neon_engine.h"
+#include "input.h"
+#include "rendering.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -21,6 +23,11 @@ void UserInterface::glfw_error_callback(int error, const char* description)
 
 UserInterface::UserInterface() {
     neon_engine = nullptr;
+    input = nullptr;
+    rendering = nullptr;
+    viewport_width = -1;
+    viewport_height = -1;
+    first_time_viewport_fbo = true;
 }
 
 UserInterface::~UserInterface() {
@@ -38,6 +45,8 @@ UserInterface* UserInterface::get_instance()
 
 void UserInterface::initialize() {
     neon_engine = NeonEngine::get_instance();
+    input = Input::get_instance();
+    rendering = Rendering::get_instance();
 }
 
 void UserInterface::set_ui_style() {
@@ -98,8 +107,6 @@ void UserInterface::set_ui_style() {
     colors[ImGuiCol_TabActive] = light_cyan;
     colors[ImGuiCol_TabUnfocused] = dark_cyan;
     colors[ImGuiCol_TabUnfocusedActive] = light_cyan;
-
-
 }
 
 void UserInterface::setup_imgui() {
@@ -197,9 +204,30 @@ void UserInterface::render_ui() {
     }
 
     ImGui::Begin("Viewport");
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    //ImGui::GetWindowDrawList()->AddImage((void*)f_tex, pos, ImVec2(pos.x + 512, pos.y + 512), ImVec2(0, 1), ImVec2(1, 0));
+    int new_viewport_width = ImGui::GetWindowWidth();
+    int new_viewport_height = ImGui::GetWindowHeight();
+    if (new_viewport_width != viewport_width || new_viewport_height != viewport_height) {
+        if (!first_time_viewport_fbo) {
+            rendering->clean_viewport_framebuffer();
+        }
+        else {
+            first_time_viewport_fbo = false;
+        }
+        viewport_width = new_viewport_width;
+        viewport_height = new_viewport_height;
+        rendering->create_and_set_viewport_framebuffer();
+    }
+    rendering->render_viewport();
+
+    ImVec2 pos1 = ImGui::GetCursorScreenPos();
+    ImVec2 pos2(pos1.x + viewport_width, pos1.y + viewport_height);
+    //ImVec2 pos2(pos1.x + 800, pos1.y + 600);
+    //ImVec2 pos2(pos1.x + window_width / 2.0f, pos1.y + window_height / 2);
+    ImGui::GetWindowDrawList()->AddImage((void*)rendering->textureColorbuffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
     ImGui::Text("This is some useful text.");
+
+    input->process_viewport_input();
+
     ImGui::End();
 
     ImGui::Begin("Details");

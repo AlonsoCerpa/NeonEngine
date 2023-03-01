@@ -6,6 +6,8 @@
 #include <mutex>
 
 class NeonEngine;
+class Input;
+class Rendering;
 
 class UserInterface {
 public:
@@ -20,6 +22,9 @@ public:
     void render_ui();
     void clean_imgui();
 
+    int viewport_width, viewport_height;
+    bool first_time_viewport_fbo;
+
 private:
     UserInterface();
     ~UserInterface();
@@ -27,6 +32,8 @@ private:
     void set_ui_style();
 
     NeonEngine* neon_engine;
+    Input* input;
+    Rendering* rendering;
 
     static UserInterface* instance;
     static std::mutex user_interface_mutex;

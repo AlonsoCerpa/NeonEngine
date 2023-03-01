@@ -1,13 +1,14 @@
 #pragma once
 
-#include "camera.h"
-
 #include <imgui.h>
 #include <mutex>
 
 class UserInterface;
 class Input;
+class Rendering;
 struct GLFWwindow;
+class Shader;
+class Model;
 
 class NeonEngine {
 public:
@@ -26,11 +27,10 @@ public:
     int window_height;
     const char* window_title;
 
-    Camera camera_viewport;
-    int viewport_width;
-    int viewport_height;
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
+    bool firstMouse;
+    float lastX, lastY;
 
 private:
     NeonEngine();
@@ -43,6 +43,7 @@ private:
 
     UserInterface* user_interface;
     Input* input;
+    Rendering* rendering;
     
     static NeonEngine* instance;
     static std::mutex neon_engine_mutex;
