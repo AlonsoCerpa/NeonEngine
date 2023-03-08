@@ -25,6 +25,7 @@ NeonEngine::NeonEngine() {
     window = nullptr;
     user_interface = nullptr;
     input = nullptr;
+    rendering = nullptr;
     glfw_major_version = 3;
     glfw_minor_version = 3;
     glsl_version = "#version 330";
@@ -36,6 +37,8 @@ NeonEngine::NeonEngine() {
     deltaTime = 0.0f;
     lastFrame = 0.0f;
     firstMouse = true;
+    lastX = 0.0f;
+    lastY = 0.0f;
 }
 
 NeonEngine::~NeonEngine() {

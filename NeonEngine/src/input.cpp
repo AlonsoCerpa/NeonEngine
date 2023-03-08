@@ -6,12 +6,14 @@
 
 #include <GLFW/glfw3.h>
 #include <mutex>
+#include <iostream>
 
 Input* Input::instance = nullptr;
 std::mutex Input::input_mutex;
 
 Input::Input() {
-    
+    neon_engine = nullptr;
+    rendering = nullptr;
 }
 
 Input::~Input() {
@@ -44,7 +46,10 @@ void Input::process_viewport_input() {
     Camera* camera_viewport = rendering->camera_viewport;
     float& deltaTime = neon_engine->deltaTime;
     bool& firstMouse = neon_engine->firstMouse;
-    if (ImGui::IsWindowHovered()) {
+    if (!firstMouse || (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right))) {
+        if (firstMouse) {
+            glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
         if (ImGui::IsKeyDown(ImGuiKey_W)) {
             camera_viewport->ProcessKeyboard(FORWARD, deltaTime);
         }
@@ -57,14 +62,10 @@ void Input::process_viewport_input() {
         if (ImGui::IsKeyDown(ImGuiKey_D)) {
             camera_viewport->ProcessKeyboard(RIGHT, deltaTime);
         }
-        if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-            mouse_rotate_camera();
-        }
-    }
-    if (!firstMouse && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
         mouse_rotate_camera();
     }
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+        glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         firstMouse = true;
     }
 }
@@ -75,19 +76,20 @@ void Input::mouse_rotate_camera() {
     float& lastX = neon_engine->lastX;
     float& lastY = neon_engine->lastY;
 
-    ImVec2 mouse_pos = ImGui::GetMousePos();
+    double mouse_pos_x, mouse_pos_y;
+    glfwGetCursorPos(neon_engine->window, &mouse_pos_x, &mouse_pos_y);
     if (firstMouse)
     {
-        lastX = mouse_pos.x;
-        lastY = mouse_pos.y;
+        lastX = mouse_pos_x;
+        lastY = mouse_pos_y;
         firstMouse = false;
     }
 
-    float xoffset = mouse_pos.x - lastX;
-    float yoffset = lastY - mouse_pos.y; // reversed since y-coordinates go from bottom to top
+    float xoffset = mouse_pos_x - lastX;
+    float yoffset = lastY - mouse_pos_y; // reversed since y-coordinates go from bottom to top
 
-    lastX = mouse_pos.x;
-    lastY = mouse_pos.y;
+    lastX = mouse_pos_x;
+    lastY = mouse_pos_y;
 
     camera_viewport->ProcessMouseMovement(xoffset, yoffset);
 }
