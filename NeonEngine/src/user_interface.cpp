@@ -25,8 +25,12 @@ UserInterface::UserInterface() {
     neon_engine = nullptr;
     input = nullptr;
     rendering = nullptr;
-    viewport_width = -1;
-    viewport_height = -1;
+    window_viewport_width = -1;
+    window_viewport_height = -1;
+    texture_viewport_width = -1;
+    texture_viewport_height = -1;
+    texture_viewport_reduce_width_px = 10;
+    texture_viewport_reduce_height_px = 30;
     first_time_viewport_fbo = true;
 }
 
@@ -204,25 +208,33 @@ void UserInterface::render_ui() {
     }
 
     ImGui::Begin("Viewport");
-    int new_viewport_width = ImGui::GetWindowWidth();
-    int new_viewport_height = ImGui::GetWindowHeight();
-    if (new_viewport_width != viewport_width || new_viewport_height != viewport_height) {
+    int new_window_viewport_width = ImGui::GetWindowWidth();
+    int new_window_viewport_height = ImGui::GetWindowHeight();
+    if (new_window_viewport_width != window_viewport_width || new_window_viewport_height != window_viewport_height) {
         if (!first_time_viewport_fbo) {
             rendering->clean_viewport_framebuffer();
         }
         else {
             first_time_viewport_fbo = false;
         }
-        viewport_width = new_viewport_width;
-        viewport_height = new_viewport_height;
+        window_viewport_width = new_window_viewport_width;
+        window_viewport_height = new_window_viewport_height;
+        texture_viewport_width = new_window_viewport_width - texture_viewport_reduce_width_px;
+        texture_viewport_height = new_window_viewport_height - texture_viewport_reduce_height_px;
         rendering->create_and_set_viewport_framebuffer();
     }
     rendering->render_viewport();
 
     ImVec2 pos1 = ImGui::GetCursorScreenPos();
-    ImVec2 pos2(pos1.x + viewport_width, pos1.y + viewport_height);
+    ImVec2 pos2(pos1.x + texture_viewport_width, pos1.y + texture_viewport_height);
     //ImVec2 pos2(pos1.x + 800, pos1.y + 600);
     //ImVec2 pos2(pos1.x + window_width / 2.0f, pos1.y + window_height / 2);
+
+
+    ImVec2 imgui_cursor = ImGui::GetCursorPos();
+    //std::cout << "Viewport - before drawing texture: " << imgui_cursor.x << " " << imgui_cursor.y << std::endl;
+
+    viewport_texture_pos = ImGui::GetCursorPos();
     ImGui::GetWindowDrawList()->AddImage((void*)rendering->textureColorbuffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
     ImGui::Text("This is some useful text.");
 

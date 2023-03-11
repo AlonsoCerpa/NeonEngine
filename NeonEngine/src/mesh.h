@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "geometry.h"
+
 using namespace std;
 
 #define MAX_BONE_INFLUENCE 4
@@ -57,14 +59,17 @@ public:
     }
 
     // render the mesh
-    void Draw(Shader &shader) 
+    void Draw(Shader &shader, bool is_selected)
     {
+        // Use the main shader
+        shader.use();
+
         // bind appropriate textures
         unsigned int diffuseNr  = 1;
         unsigned int specularNr = 1;
         unsigned int normalNr   = 1;
         unsigned int heightNr   = 1;
-        for(unsigned int i = 0; i < textures.size(); i++)
+        for (unsigned int i = 0; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
             // retrieve texture number (the N in diffuse_textureN)
@@ -76,7 +81,7 @@ public:
                 number = std::to_string(specularNr++); // transfer unsigned int to string
             else if(name == "texture_normal")
                 number = std::to_string(normalNr++); // transfer unsigned int to string
-             else if(name == "texture_height")
+            else if(name == "texture_height")
                 number = std::to_string(heightNr++); // transfer unsigned int to string
 
             // now set the sampler to the correct texture unit
@@ -85,13 +90,57 @@ public:
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
         
+        // if mesh is selected then fill stencil buffer values with ones
+        if (is_selected) {
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        }
+        else {
+            glStencilMask(0x00); // write only zeros to the stencil buffer (equivalent to not updating the stencil buffer)
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        }
+
+        shader.setInt("expand_vertices", 0);
+        shader.setInt("render_one_color", 0);
+
         // draw mesh
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
+        if (is_selected) {
+            shader.setInt("expand_vertices", 1);
+            shader.setInt("render_one_color", 1);
+
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilMask(0x00); // write only zeros to the stencil buffer (equivalent to not updating the stencil buffer)
+            //glDisable(GL_DEPTH_TEST);
+
+            // draw mesh
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+
+            //glEnable(GL_DEPTH_TEST);
+        }
+
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
+
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
+    }
+
+    bool intersected_ray(const glm::vec3& orig, const glm::vec3& dir, float& t) {
+        for (int i = 0; i < indices.size(); i += 3) {
+            glm::vec3 v0 = vertices[i].Position;
+            glm::vec3 v1 = vertices[i+1].Position;
+            glm::vec3 v2 = vertices[i+2].Position;
+            if (ray_triangle_intersection(orig, dir, v0, v1, v2, t)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 private:

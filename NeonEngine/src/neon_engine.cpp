@@ -127,13 +127,13 @@ int NeonEngine::run() {
     stbi_set_flip_vertically_on_load(true);
 
     // configure global opengl state
-    glEnable(GL_DEPTH_TEST);
-
+    rendering->set_opengl_state();
 
     rendering->set_viewport_shaders();
 
-
     rendering->set_viewport_models();
+
+    rendering->initialize_game_objects();
     
 
     /*

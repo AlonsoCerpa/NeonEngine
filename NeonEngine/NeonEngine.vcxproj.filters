@@ -36,6 +36,9 @@
     <ClCompile Include="src\rendering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\geometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\neon_engine.h">
@@ -65,12 +68,15 @@
     <ClInclude Include="src\rendering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\geometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\model_loading.frag">
+    <None Include="shaders\render_model.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="src\model_loading.vert">
+    <None Include="shaders\render_model.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -22,8 +22,11 @@ public:
     void render_ui();
     void clean_imgui();
 
-    int viewport_width, viewport_height;
+    int window_viewport_width, window_viewport_height;
+    int texture_viewport_width, texture_viewport_height;;
+    int texture_viewport_reduce_width_px, texture_viewport_reduce_height_px;
     bool first_time_viewport_fbo;
+    ImVec2 viewport_texture_pos;
 
 private:
     UserInterface();

@@ -46,6 +46,20 @@ void Input::process_viewport_input() {
     Camera* camera_viewport = rendering->camera_viewport;
     float& deltaTime = neon_engine->deltaTime;
     bool& firstMouse = neon_engine->firstMouse;
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        int game_object_idx = rendering->check_mouse_over_models();
+        if (rendering->idx_selected_object != -1) {
+            rendering->game_objects[rendering->idx_selected_object].is_selected = false;
+        }
+        if (game_object_idx != -1) {
+            rendering->game_objects[game_object_idx].is_selected = true;
+            rendering->idx_selected_object = game_object_idx;
+            std::cout << "INTERSECTION DETECTED: " << game_object_idx << std::endl;
+        }
+        else {
+            std::cout << "NOT INTERSECTION DETECTED" << std::endl;
+        }
+    }
     if (!firstMouse || (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right))) {
         if (firstMouse) {
             glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

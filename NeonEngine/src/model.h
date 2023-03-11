@@ -39,10 +39,20 @@ public:
     }
 
     // draws the model, and thus all its meshes
-    void Draw(Shader &shader)
+    void Draw(Shader &shader, bool is_selected)
     {
-        for(unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw(shader);
+        for (unsigned int i = 0; i < meshes.size(); i++) {
+            meshes[i].Draw(shader, is_selected);
+        }
+    }
+
+    bool intersected_ray(const glm::vec3& orig, const glm::vec3& dir, float& t) {
+        for (unsigned int i = 0; i < meshes.size(); i++) {
+            if (meshes[i].intersected_ray(orig, dir, t)) {
+                return true;
+            }
+        }
+        return false;
     }
     
 private:

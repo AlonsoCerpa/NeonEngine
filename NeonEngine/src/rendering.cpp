@@ -4,6 +4,7 @@
 #include "shader.h"
 #include "model.h"
 #include "user_interface.h"
+#include "neon_engine.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,8 +20,10 @@ std::mutex Rendering::rendering_mutex;
 
 Rendering::Rendering() {
     ourShader = nullptr;
-    ourModel = nullptr;
     camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
+    near_camera_viewport = 0.1f;
+    far_camera_viewport = 100.0f;
+    idx_selected_object = -1;
 }
 
 Rendering::~Rendering() {
@@ -38,55 +41,137 @@ Rendering* Rendering::get_instance()
 
 void Rendering::initialize() {
     user_interface = UserInterface::get_instance();
+    neon_engine = NeonEngine::get_instance();
+}
+
+int Rendering::check_mouse_over_models() {
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+    view_projection = projection * view;
+    view_projection_inv = glm::inverse(view_projection);
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 mouse_pos = io.MousePos;
+    ImVec2 window_pos = ImGui::GetWindowPos();
+    ImVec2 mouse_pos_in_window = ImVec2(mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y);
+    ImVec2& viewport_texture_pos = user_interface->viewport_texture_pos;
+    ImVec2 mouse_pos_in_viewport_texture = ImVec2(mouse_pos_in_window.x - viewport_texture_pos.x, mouse_pos_in_window.y - viewport_texture_pos.y);
+    if (mouse_pos_in_viewport_texture.x >= 0 && mouse_pos_in_viewport_texture.y >= 0 &&
+        mouse_pos_in_viewport_texture.x <= texture_viewport_width && mouse_pos_in_viewport_texture.y <= texture_viewport_height) {
+        float x_viewport = mouse_pos_in_viewport_texture.x * (2.0f / texture_viewport_width) - 1;
+        float y_viewport = -mouse_pos_in_viewport_texture.y * (2.0f / texture_viewport_height) + 1;
+        glm::vec4 mouse_viewport(x_viewport, y_viewport, -1.0f, 1.0f); // in clip space with near plane depth
+        glm::vec4 mouse_world = view_projection_inv * mouse_viewport;
+        mouse_world /= mouse_world.w;
+        glm::vec3 ray_dir = glm::normalize(glm::vec3(mouse_world) - camera_viewport->Position);
+
+        float t;
+        int idx_intersected_object = -1;
+        float min_t = std::numeric_limits<float>::max();
+        for (int i = 0; i < game_objects.size(); i++) {
+            GameObject& game_object = game_objects[i];
+            glm::vec3 ray_dir_model = game_object.model_inv * glm::vec4(ray_dir, 0.0f);
+            glm::vec3 ray_origin_model = game_object.model_inv * glm::vec4(camera_viewport->Position, 1.0f);
+            if (loaded_models[game_object.idx_loaded_models]->intersected_ray(ray_origin_model, ray_dir_model, t)) {
+                if (t < min_t) {
+                    min_t = t;
+                    idx_intersected_object = i;
+                }
+            }
+        }
+        if (idx_intersected_object != -1) {
+            return idx_intersected_object;
+        }
+        else {
+            return -1;
+        }
+    }
+    return -1;
+}
+
+void Rendering::initialize_game_objects() {
+    GameObject backpack1;
+    backpack1.idx_loaded_models = 0;
+    backpack1.position = glm::vec3(0.0f, 0.0f, -5.0f);
+    backpack1.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    backpack1.axis_rotation = glm::vec3(1.0f, 0.0f, 0.0f);;
+    backpack1.angle_rotation_degrees = 0.0f;
+    backpack1.model = glm::mat4(1.0f);
+    backpack1.model = glm::translate(backpack1.model, backpack1.position);
+    backpack1.model = glm::rotate(backpack1.model, glm::radians(backpack1.angle_rotation_degrees), backpack1.axis_rotation);
+    backpack1.model = glm::scale(backpack1.model, backpack1.scale);
+    backpack1.model_inv = glm::inverse(backpack1.model);
+    backpack1.is_selected = false;
+    game_objects.push_back(backpack1);
+
+    GameObject backpack2;
+    backpack2.idx_loaded_models = 0;
+    backpack2.position = glm::vec3(6.0f, 4.0f, -15.0f);
+    backpack2.scale = glm::vec3(0.5f, 0.5f, 0.5f);
+    backpack2.axis_rotation = glm::vec3(1.0f, 0.0f, 0.0f);;
+    backpack2.angle_rotation_degrees = 60.0f;
+    backpack2.model = glm::mat4(1.0f);
+    backpack2.model = glm::translate(backpack2.model, backpack2.position);
+    backpack2.model = glm::rotate(backpack2.model, glm::radians(backpack2.angle_rotation_degrees), backpack2.axis_rotation);
+    backpack2.model = glm::scale(backpack2.model, backpack2.scale);
+    backpack2.model_inv = glm::inverse(backpack2.model);
+    backpack2.is_selected = false;
+    game_objects.push_back(backpack2);
+}
+
+void Rendering::set_opengl_state() {
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 }
 
 void Rendering::render_viewport() {
-    int viewport_width = user_interface->viewport_width;
-    int viewport_height = user_interface->viewport_height;
-    glViewport(0, 0, viewport_width, viewport_height);
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+    glViewport(0, 0, texture_viewport_width, texture_viewport_height);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     glClearColor(1.0f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
-
-    ourShader->use();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // view/projection transformations
-    glm::mat4 projection = glm::perspective(glm::radians(camera_viewport->Zoom), (float)viewport_width / (float)viewport_height, 0.1f, 100.0f);
-    glm::mat4 view = camera_viewport->GetViewMatrix();
+    projection = glm::perspective(glm::radians(camera_viewport->Zoom), (float)texture_viewport_width / (float)texture_viewport_height, near_camera_viewport, far_camera_viewport);
+    view = camera_viewport->GetViewMatrix();
     ourShader->setMat4("projection", projection);
     ourShader->setMat4("view", view);
-
-    // render the loaded model
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-    ourShader->setMat4("model", model);
-    ourModel->Draw(*ourShader);
+    // render all the game objects
+    for (int i = 0; i < game_objects.size(); i++) {
+        GameObject& game_object = game_objects[i];
+        ourShader->setMat4("model", game_object.model);
+        loaded_models[game_object.idx_loaded_models]->Draw(*ourShader, game_object.is_selected);
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Rendering::set_viewport_shaders() {
     // build and compile shaders
-    ourShader = new Shader("src/model_loading.vert", "src/model_loading.frag");
+    ourShader = new Shader("shaders/render_model.vert", "shaders/render_model.frag");
 }
 
 void Rendering::set_viewport_models() {
     // load models
-    ourModel = new Model("models/backpack/backpack.obj");
+    loaded_models.push_back(new Model("models/backpack/backpack.obj"));
 }
 
 void Rendering::create_and_set_viewport_framebuffer() {
-    int viewport_width = user_interface->viewport_width;
-    int viewport_height = user_interface->viewport_height;
-    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &rboDepthStencil, viewport_width, viewport_height);
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &rboDepthStencil, texture_viewport_width, texture_viewport_height);
 }
 
 void Rendering::clean() {
     delete ourShader;
-    delete ourModel;
+    for (int i = 0; i < loaded_models.size(); i++) {
+        delete loaded_models[i];
+    }
     delete camera_viewport;
 }
 

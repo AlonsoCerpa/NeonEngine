@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\geometry.cpp" />
     <ClCompile Include="src\rendering.cpp" />
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -139,6 +140,7 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\geometry.h" />
     <ClInclude Include="src\rendering.h" />
     <ClInclude Include="src\mesh.h" />
     <ClInclude Include="src\model.h" />
@@ -150,8 +152,8 @@
     <ClInclude Include="src\user_interface.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\model_loading.frag" />
-    <None Include="src\model_loading.vert" />
+    <None Include="shaders\render_model.frag" />
+    <None Include="shaders\render_model.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
