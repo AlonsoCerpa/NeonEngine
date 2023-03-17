@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\cylinder.cpp" />
     <ClCompile Include="src\geometry.cpp" />
     <ClCompile Include="src\rendering.cpp" />
     <ClCompile Include="src\input.cpp" />
@@ -140,6 +141,8 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\complex_model.h" />
+    <ClInclude Include="src\cylinder.h" />
     <ClInclude Include="src\geometry.h" />
     <ClInclude Include="src\rendering.h" />
     <ClInclude Include="src\mesh.h" />

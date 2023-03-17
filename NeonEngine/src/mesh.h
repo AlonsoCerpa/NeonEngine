@@ -59,7 +59,7 @@ public:
     }
 
     // render the mesh
-    void Draw(Shader &shader, bool is_selected)
+    void draw(Shader &shader, bool is_selected)
     {
         // Use the main shader
         shader.use();

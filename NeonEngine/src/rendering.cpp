@@ -2,9 +2,10 @@
 
 #include "camera.h"
 #include "shader.h"
-#include "model.h"
+#include "complex_model.h"
 #include "user_interface.h"
 #include "neon_engine.h"
+#include "cylinder.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -27,7 +28,7 @@ Rendering::Rendering() {
 }
 
 Rendering::~Rendering() {
-
+    // Delete all the data in the "clean" member function
 }
 
 Rendering* Rendering::get_instance()
@@ -71,6 +72,12 @@ int Rendering::check_mouse_over_models() {
             GameObject& game_object = game_objects[i];
             glm::vec3 ray_dir_model = game_object.model_inv * glm::vec4(ray_dir, 0.0f);
             glm::vec3 ray_origin_model = game_object.model_inv * glm::vec4(camera_viewport->Position, 1.0f);
+
+            /*
+            if (game_object.idx_loaded_models != 0) {
+                continue;
+            }*/
+
             if (loaded_models[game_object.idx_loaded_models]->intersected_ray(ray_origin_model, ray_dir_model, t)) {
                 if (t < min_t) {
                     min_t = t;
@@ -89,33 +96,20 @@ int Rendering::check_mouse_over_models() {
 }
 
 void Rendering::initialize_game_objects() {
-    GameObject backpack1;
-    backpack1.idx_loaded_models = 0;
-    backpack1.position = glm::vec3(0.0f, 0.0f, -5.0f);
-    backpack1.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    backpack1.axis_rotation = glm::vec3(1.0f, 0.0f, 0.0f);;
-    backpack1.angle_rotation_degrees = 0.0f;
-    backpack1.model = glm::mat4(1.0f);
-    backpack1.model = glm::translate(backpack1.model, backpack1.position);
-    backpack1.model = glm::rotate(backpack1.model, glm::radians(backpack1.angle_rotation_degrees), backpack1.axis_rotation);
-    backpack1.model = glm::scale(backpack1.model, backpack1.scale);
-    backpack1.model_inv = glm::inverse(backpack1.model);
-    backpack1.is_selected = false;
+    GameObject backpack1(0, glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
     game_objects.push_back(backpack1);
 
-    GameObject backpack2;
-    backpack2.idx_loaded_models = 0;
-    backpack2.position = glm::vec3(6.0f, 4.0f, -15.0f);
-    backpack2.scale = glm::vec3(0.5f, 0.5f, 0.5f);
-    backpack2.axis_rotation = glm::vec3(1.0f, 0.0f, 0.0f);;
-    backpack2.angle_rotation_degrees = 60.0f;
-    backpack2.model = glm::mat4(1.0f);
-    backpack2.model = glm::translate(backpack2.model, backpack2.position);
-    backpack2.model = glm::rotate(backpack2.model, glm::radians(backpack2.angle_rotation_degrees), backpack2.axis_rotation);
-    backpack2.model = glm::scale(backpack2.model, backpack2.scale);
-    backpack2.model_inv = glm::inverse(backpack2.model);
-    backpack2.is_selected = false;
+    GameObject backpack2(0, glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), 60.0f, false);
     game_objects.push_back(backpack2);
+
+    GameObject cylinder1(1, glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    game_objects.push_back(cylinder1);
+
+    GameObject cone1(2, glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    game_objects.push_back(cone1);
+
+    GameObject cylinder2(1, glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    game_objects.push_back(cylinder2);
 }
 
 void Rendering::set_opengl_state() {
@@ -145,8 +139,9 @@ void Rendering::render_viewport() {
     for (int i = 0; i < game_objects.size(); i++) {
         GameObject& game_object = game_objects[i];
         ourShader->setMat4("model", game_object.model);
-        loaded_models[game_object.idx_loaded_models]->Draw(*ourShader, game_object.is_selected);
+        loaded_models[game_object.idx_loaded_models]->draw(*ourShader, game_object.is_selected);
     }
+
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -157,8 +152,18 @@ void Rendering::set_viewport_shaders() {
 }
 
 void Rendering::set_viewport_models() {
-    // load models
-    loaded_models.push_back(new Model("models/backpack/backpack.obj"));
+    // load complex models
+    loaded_models.push_back(new ComplexModel("models/backpack/backpack.obj"));
+
+    // load basic shapes
+    //loaded_models.push_back(new Cylinder(0.5f, 1.0f, 30, 1));
+    //loaded_models.push_back(new Cone(0.5f, 1.0f, 30, 1));
+
+    // Cylinder
+    loaded_models.push_back(new Cylinder());
+
+    // Cone
+    loaded_models.push_back(new Cylinder(1.0f, 0.0f));
 }
 
 void Rendering::create_and_set_viewport_framebuffer() {
