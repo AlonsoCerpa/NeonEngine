@@ -2,6 +2,8 @@
 
 #include <mutex>
 #include <vector>
+#include <unordered_map>
+#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,41 +14,46 @@ class Model;
 class UserInterface;
 class NeonEngine;
 class Shape;
+class GameObject;
+class PointLight;
+class DirectionalLight;
+class SpotLight;
 
 unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource);
 unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data);
 void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* rboDepthStencil, int width, int height);
 
-class GameObject {
+class KeyGenerator {
 public:
-    int idx_loaded_models = -1;
-    glm::vec3 position;
-    glm::vec3 scale;
-    glm::vec3 axis_rotation;
-    float angle_rotation_degrees;
-    glm::mat4 model;
-    glm::mat4 model_inv;
-    bool is_selected;
-
-    GameObject(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, bool is_selected) {
-        this->idx_loaded_models = idx_loaded_models;
-        this->position = pos;
-        this->scale = scale;
-        this->axis_rotation = axis_rot;
-        this->angle_rotation_degrees = angle;
-        this->is_selected = is_selected;
-
-        set_model_and_model_inv();
+    KeyGenerator(int max_num_keys) {
+        this->max_num_keys = max_num_keys;
+        this->available_keys = std::vector<int>(max_num_keys);
+        for (int i = max_num_keys - 1; i >= 0; i--) {
+            this->available_keys[max_num_keys-i-1] = i;
+        }
     }
 
-    void set_model_and_model_inv() {
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, position);
-        model = glm::rotate(model, glm::radians(angle_rotation_degrees), axis_rotation);
-        model = glm::scale(model, scale);
-        
-        model_inv = glm::inverse(model);
+    int generate_key() {
+        if (available_keys.empty()) {
+            std::cout << "Error: no available keys!" << std::endl;
+            return -1;
+        }
+        int key = available_keys.back();
+        available_keys.pop_back();
+        return key;
     }
+
+    void return_key(int key) {
+        if (key < 0 || key >= max_num_keys) {
+            std::cout << "Error: invalid key!" << std::endl;
+            return;
+        }
+        available_keys.push_back(key);
+    }
+
+private:
+    int max_num_keys;
+    std::vector<int> available_keys;
 };
 
 class Rendering {
@@ -67,6 +74,7 @@ public:
     int check_mouse_over_models();
     void initialize_game_objects();
 
+    KeyGenerator* key_generator;
     glm::mat4 view, projection;
     glm::mat4 view_projection, view_projection_inv;
     Camera* camera_viewport;
@@ -74,8 +82,11 @@ public:
     unsigned int framebuffer, textureColorbuffer, rboDepthStencil;
     Shader* ourShader;
     std::vector<Model*> loaded_models;
-    std::vector<GameObject> game_objects;
-    int idx_selected_object;
+    std::unordered_map<int, PointLight*> point_lights;
+    std::unordered_map<int, DirectionalLight*> directional_lights;
+    std::unordered_map<int, SpotLight*> spot_lights;
+    std::unordered_map<int, GameObject*> game_objects;
+    int key_selected_object;
     UserInterface* user_interface;
     NeonEngine* neon_engine;
 

@@ -3,6 +3,7 @@
 #include "neon_engine.h"
 #include "rendering.h"
 #include "camera.h"
+#include "game_object.h"
 
 #include <GLFW/glfw3.h>
 #include <mutex>
@@ -48,16 +49,16 @@ void Input::process_viewport_input() {
     bool& firstMouse = neon_engine->firstMouse;
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         std::cout << "CLICKED" << std::endl;
-        int game_object_idx = rendering->check_mouse_over_models();
+        int game_object_key = rendering->check_mouse_over_models();
         std::cout << "ENDED CHECKING" << std::endl;
-        if (rendering->idx_selected_object != -1) {
-            rendering->game_objects[rendering->idx_selected_object].is_selected = false;
+        if (rendering->key_selected_object != -1) {
+            rendering->game_objects[rendering->key_selected_object]->is_selected = false;
         }
-        if (game_object_idx != -1) {
+        if (game_object_key != -1) {
             std::cout << "FOUND INTERSECTION" << std::endl;
-            rendering->game_objects[game_object_idx].is_selected = true;
-            rendering->idx_selected_object = game_object_idx;
-            std::cout << "INTERSECTION DETECTED: " << game_object_idx << std::endl;
+            rendering->game_objects[game_object_key]->is_selected = true;
+            rendering->key_selected_object = game_object_key;
+            std::cout << "INTERSECTION DETECTED: " << game_object_key << std::endl;
         }
         else {
             std::cout << "NOT INTERSECTION DETECTED" << std::endl;

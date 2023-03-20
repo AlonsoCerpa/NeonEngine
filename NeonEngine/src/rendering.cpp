@@ -6,6 +6,8 @@
 #include "user_interface.h"
 #include "neon_engine.h"
 #include "cylinder.h"
+#include "game_object.h"
+#include "opengl_utils.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,7 +26,8 @@ Rendering::Rendering() {
     camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
     near_camera_viewport = 0.1f;
     far_camera_viewport = 100.0f;
-    idx_selected_object = -1;
+    key_selected_object = -1;
+    key_generator = new KeyGenerator(1000000);
 }
 
 Rendering::~Rendering() {
@@ -66,27 +69,27 @@ int Rendering::check_mouse_over_models() {
         glm::vec3 ray_dir = glm::normalize(glm::vec3(mouse_world) - camera_viewport->Position);
 
         float t;
-        int idx_intersected_object = -1;
+        int key_intersected_object = -1;
         float min_t = std::numeric_limits<float>::max();
-        for (int i = 0; i < game_objects.size(); i++) {
-            GameObject& game_object = game_objects[i];
-            glm::vec3 ray_dir_model = game_object.model_inv * glm::vec4(ray_dir, 0.0f);
-            glm::vec3 ray_origin_model = game_object.model_inv * glm::vec4(camera_viewport->Position, 1.0f);
+        for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
+            GameObject* game_object = it->second;
+            glm::vec3 ray_dir_model = game_object->model_inv * glm::vec4(ray_dir, 0.0f);
+            glm::vec3 ray_origin_model = game_object->model_inv * glm::vec4(camera_viewport->Position, 1.0f);
 
             /*
             if (game_object.idx_loaded_models != 0) {
                 continue;
             }*/
 
-            if (loaded_models[game_object.idx_loaded_models]->intersected_ray(ray_origin_model, ray_dir_model, t)) {
+            if (loaded_models[game_object->idx_loaded_models]->intersected_ray(ray_origin_model, ray_dir_model, t)) {
                 if (t < min_t) {
                     min_t = t;
-                    idx_intersected_object = i;
+                    key_intersected_object = it->first;
                 }
             }
         }
-        if (idx_intersected_object != -1) {
-            return idx_intersected_object;
+        if (key_intersected_object != -1) {
+            return key_intersected_object;
         }
         else {
             return -1;
@@ -96,20 +99,48 @@ int Rendering::check_mouse_over_models() {
 }
 
 void Rendering::initialize_game_objects() {
-    GameObject backpack1(0, glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
-    game_objects.push_back(backpack1);
+    GameObject* backpack1 = new GameObject(0, glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    int backpack1_key = key_generator->generate_key();
+    game_objects[backpack1_key] = backpack1;
 
-    GameObject backpack2(0, glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), 60.0f, false);
-    game_objects.push_back(backpack2);
+    GameObject* backpack2 = new GameObject(0, glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), 60.0f, false);
+    int backpack2_key = key_generator->generate_key();
+    game_objects[backpack2_key] = backpack2;
 
-    GameObject cylinder1(1, glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
-    game_objects.push_back(cylinder1);
+    GameObject* cylinder1 = new GameObject(1, glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    int cylinder1_key = key_generator->generate_key();
+    game_objects[cylinder1_key] = cylinder1;
 
-    GameObject cone1(2, glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
-    game_objects.push_back(cone1);
+    GameObject* cone1 = new GameObject(2, glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    int cone1_key = key_generator->generate_key();
+    game_objects[cone1_key] = cone1;
 
-    GameObject cylinder2(1, glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
-    game_objects.push_back(cylinder2);
+    GameObject* cylinder2 = new GameObject(1, glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false);
+    int cylinder2_key = key_generator->generate_key();
+    game_objects[cylinder2_key] = cylinder2;
+
+    
+
+    GameObject* point_light1 = new PointLight(1, glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false,
+        glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.045f, 0.0075f);
+    int point_light1_key = key_generator->generate_key();
+    game_objects[point_light1_key] = point_light1;
+    point_lights[point_light1_key] = (PointLight*)point_light1;
+
+
+    GameObject* directional_light1 = new DirectionalLight(1, glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false,
+        glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(3.0f, -4.0f, -3.0f));
+    int directional_light1_key = key_generator->generate_key();
+    game_objects[directional_light1_key] = directional_light1;
+    directional_lights[directional_light1_key] = (DirectionalLight*)directional_light1;
+
+
+    GameObject* spot_light1 = new SpotLight(1, glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, false,
+        glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(5.0f, 5.0f, -3.0f),
+        glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.09f, 0.032f);
+    int spot_light1_key = key_generator->generate_key();
+    game_objects[spot_light1_key] = spot_light1;
+    spot_lights[spot_light1_key] = (SpotLight*)spot_light1;
 }
 
 void Rendering::set_opengl_state() {
@@ -133,15 +164,54 @@ void Rendering::render_viewport() {
     // view/projection transformations
     projection = glm::perspective(glm::radians(camera_viewport->Zoom), (float)texture_viewport_width / (float)texture_viewport_height, near_camera_viewport, far_camera_viewport);
     view = camera_viewport->GetViewMatrix();
-    ourShader->setMat4("projection", projection);
-    ourShader->setMat4("view", view);
-    // render all the game objects
-    for (int i = 0; i < game_objects.size(); i++) {
-        GameObject& game_object = game_objects[i];
-        ourShader->setMat4("model", game_object.model);
-        loaded_models[game_object.idx_loaded_models]->draw(*ourShader, game_object.is_selected);
+
+    ourShader->setVec3("viewPos", camera_viewport->Position);
+
+    ourShader->setInt("num_point_lights", point_lights.size());
+    ourShader->setInt("num_directional_lights", directional_lights.size());
+    ourShader->setInt("num_spot_lights", spot_lights.size());
+
+    int idx_point_light = 0;
+    for (auto it = point_lights.begin(); it != point_lights.end(); it++, idx_point_light++) {
+        ourShader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].position", it->second->position);
+        ourShader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].ambient", it->second->ambient);
+        ourShader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].diffuse", it->second->diffuse);
+        ourShader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].specular", it->second->specular);
+        ourShader->setFloat("pointLights[" + std::to_string(idx_point_light) + "].constant", it->second->constant);
+        ourShader->setFloat("pointLights[" + std::to_string(idx_point_light) + "].linear", it->second->linear);
+        ourShader->setFloat("pointLights[" + std::to_string(idx_point_light) + "].quadratic", it->second->quadratic);
     }
 
+    int idx_directional_light = 0;
+    for (auto it = directional_lights.begin(); it != directional_lights.end(); it++, idx_directional_light++) {
+        ourShader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].direction", it->second->direction);
+        ourShader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].ambient", it->second->ambient);
+        ourShader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].diffuse", it->second->diffuse);
+        ourShader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].specular", it->second->specular);
+    }
+
+    int idx_spot_light = 0;
+    for (auto it = spot_lights.begin(); it != spot_lights.end(); it++, idx_spot_light++) {
+        ourShader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].position", it->second->position);
+        ourShader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].direction", it->second->direction);
+        ourShader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].ambient", it->second->ambient);
+        ourShader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].diffuse", it->second->diffuse);
+        ourShader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].specular", it->second->specular);
+        ourShader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].constant", it->second->constant);
+        ourShader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].linear", it->second->linear);
+        ourShader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].quadratic", it->second->quadratic);
+        ourShader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].inner_cut_off", it->second->inner_cut_off);
+        ourShader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].outer_cut_off", it->second->outer_cut_off);
+    }
+
+    // render all the game objects
+    for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
+        GameObject* game_object = it->second;
+        ourShader->setMat4("model", game_object->model);
+        ourShader->setMat3("model_normals", glm::mat3(glm::transpose(glm::inverse(game_object->model))));
+        ourShader->setMat4("model_view_projection", projection * view * game_object->model);
+        loaded_models[game_object->idx_loaded_models]->draw(*ourShader, game_object->is_selected);
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -177,116 +247,15 @@ void Rendering::clean() {
     for (int i = 0; i < loaded_models.size(); i++) {
         delete loaded_models[i];
     }
+    for (int i = 0; i < game_objects.size(); i++) {
+        delete game_objects[i];
+    }
     delete camera_viewport;
+    delete key_generator;
 }
 
 void Rendering::clean_viewport_framebuffer() {
     glDeleteFramebuffers(1, &framebuffer);
     glDeleteTextures(1, &textureColorbuffer);
     glDeleteRenderbuffers(1, &rboDepthStencil);
-}
-
-unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource) {
-    // build and compile our shader program
-    // ------------------------------------
-    // vertex shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    // check for shader compile errors
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    // fragment shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    // check for shader compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    // link shaders
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    // check for linking errors
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return shaderProgram;
-}
-
-unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data) {
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, size_vertex_data, vertex_data, GL_STATIC_DRAW);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9, vertex_data, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
-
-    return VAO;
-}
-
-void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* rboDepthStencil, int width, int height) {
-    int color_texture_width = width;
-    int color_texture_height = height;
-    int depth_stencil_rbo_width = width;
-    int depth_stencil_rbo_height = height;
-
-    // Create and bind Framebuffer
-    glGenFramebuffers(1, framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer);
-
-    // Create and set Color Texture
-    glGenTextures(1, textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, *textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, color_texture_width, color_texture_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // Attach the Texture to the currently bound Framebuffer object
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *textureColorbuffer, 0);
-
-    // Create and set Depth and Stencil Renderbuffer
-    glGenRenderbuffers(1, rboDepthStencil);
-    glBindRenderbuffer(GL_RENDERBUFFER, *rboDepthStencil);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, depth_stencil_rbo_width, depth_stencil_rbo_height);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    // Attach the Renderbuffer to the currently bound Gramebuffer object
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *rboDepthStencil);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-
-    // Bind to the default Framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

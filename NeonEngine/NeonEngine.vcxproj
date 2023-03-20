@@ -141,6 +141,8 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\opengl_utils.h" />
+    <ClInclude Include="src\game_object.h" />
     <ClInclude Include="src\complex_model.h" />
     <ClInclude Include="src\cylinder.h" />
     <ClInclude Include="src\geometry.h" />
