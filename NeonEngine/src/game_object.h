@@ -13,16 +13,18 @@ public:
     float angle_rotation_degrees;
     glm::mat4 model;
     glm::mat4 model_inv;
+    glm::vec3 color;
     bool is_selected;
 
-    GameObject() {}
-
-    GameObject(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, bool is_selected) {
+    GameObject(int idx_loaded_models = 0, const glm::vec3& pos = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3& scale = glm::vec3(1.0f, 1.0f, 1.0f),
+               const glm::vec3& axis_rot = glm::vec3(1.0f, 0.0f, 0.0f), float angle = 0.0f,
+               const glm::vec3& color = glm::vec3(0.0f, 0.0f, 0.0f), bool is_selected = false) {
         this->idx_loaded_models = idx_loaded_models;
         this->position = pos;
         this->scale = scale;
         this->axis_rotation = axis_rot;
         this->angle_rotation_degrees = angle;
+        this->color = color;
         this->is_selected = is_selected;
 
         set_model_and_model_inv();
@@ -46,9 +48,9 @@ public:
 
     Light() {}
 
-    Light(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, bool is_selected,
+    Light(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, const glm::vec3& color, bool is_selected,
           const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular)
-          : GameObject(idx_loaded_models, pos, scale, axis_rot, angle, is_selected) {
+          : GameObject(idx_loaded_models, pos, scale, axis_rot, angle, color, is_selected) {
         this->ambient = ambient;
         this->diffuse = diffuse;
         this->specular = specular;
@@ -61,9 +63,9 @@ public:
     float linear;
     float quadratic;
 
-    PointLight(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, bool is_selected,
+    PointLight(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, const glm::vec3& color, bool is_selected,
                const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, float constant, float linear, float quadratic)
-               : Light(idx_loaded_models, pos, scale, axis_rot, angle, is_selected, ambient, diffuse, specular) {
+               : Light(idx_loaded_models, pos, scale, axis_rot, angle, color, is_selected, ambient, diffuse, specular) {
         this->constant = constant;
         this->linear = linear;
         this->quadratic = quadratic;
@@ -74,9 +76,9 @@ class DirectionalLight : public Light {
 public:
     glm::vec3 direction;
 
-    DirectionalLight(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, bool is_selected,
+    DirectionalLight(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, const glm::vec3& color, bool is_selected,
                      const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, const glm::vec3& direction)
-                     : Light(idx_loaded_models, pos, scale, axis_rot, angle, is_selected, ambient, diffuse, specular) {
+                     : Light(idx_loaded_models, pos, scale, axis_rot, angle, color, is_selected, ambient, diffuse, specular) {
         this->direction = direction;
     }
 };
@@ -92,10 +94,10 @@ public:
     float linear;
     float quadratic;
 
-    SpotLight(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, bool is_selected,
+    SpotLight(int idx_loaded_models, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& axis_rot, float angle, const glm::vec3& color, bool is_selected,
               const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, const glm::vec3& direction, float inner_cut_off, float outer_cut_off,
               float constant, float linear, float quadratic)
-              : Light(idx_loaded_models, pos, scale, axis_rot, angle, is_selected, ambient, diffuse, specular) {
+              : Light(idx_loaded_models, pos, scale, axis_rot, angle, color, is_selected, ambient, diffuse, specular) {
         this->direction = direction;
 
         this->inner_cut_off = inner_cut_off;

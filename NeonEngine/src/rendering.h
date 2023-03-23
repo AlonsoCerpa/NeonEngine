@@ -87,6 +87,7 @@ public:
     std::unordered_map<int, SpotLight*> spot_lights;
     std::unordered_map<int, GameObject*> game_objects;
     int key_selected_object;
+    glm::vec3 highlight_color;
     UserInterface* user_interface;
     NeonEngine* neon_engine;
 

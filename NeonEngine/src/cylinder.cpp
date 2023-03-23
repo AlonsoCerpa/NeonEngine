@@ -21,6 +21,7 @@
 #include "cylinder.h"
 #include "shader.h"
 #include "geometry.h"
+#include "rendering.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -198,22 +199,52 @@ bool Cylinder::intersected_ray(const glm::vec3& orig, const glm::vec3& dir, floa
 // draw a cylinder in VertexArray mode
 // OpenGL RC must be set before calling it
 ///////////////////////////////////////////////////////////////////////////////
-void Cylinder::draw(Shader& shader, bool is_selected)
+void Cylinder::draw(Shader& shader, bool is_selected, Rendering* rendering)
 {
     shader.use();
 
-    shader.setInt("expand_vertices", 0);
-    shader.setInt("render_one_color", 1);
+    // if mesh is selected then fill stencil buffer values with ones
+    if (is_selected) {
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    }
+    else {
+        glStencilMask(0x00); // write only zeros to the stencil buffer (equivalent to not updating the stencil buffer)
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    }
 
-    glStencilMask(0x00); // write only zeros to the stencil buffer (equivalent to not updating the stencil buffer)
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    shader.setInt("expand_vertices", false);
+    shader.setInt("render_ambient_one_color", false);
+    shader.setInt("render_with_texture", false);
 
+    // draw mesh
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
+    if (is_selected) {
+        shader.setVec3("model_color", rendering->highlight_color);
+        shader.setInt("expand_vertices", true);
+        shader.setInt("render_ambient_one_color", true);
+        shader.setInt("render_with_texture", false);
+
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00); // write only zeros to the stencil buffer (equivalent to not updating the stencil buffer)
+        //glDisable(GL_DEPTH_TEST);
+
+        // draw mesh
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
+        //glEnable(GL_DEPTH_TEST);
+    }
+
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
+
+    // always good practice to set everything back to defaults once configured.
+    glActiveTexture(GL_TEXTURE0);
 }
 
 

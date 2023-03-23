@@ -40,10 +40,10 @@ public:
     }
 
     // draws the model, and thus all its meshes
-    void draw(Shader& shader, bool is_selected)
+    void draw(Shader& shader, bool is_selected, Rendering* rendering)
     {
         for (unsigned int i = 0; i < meshes.size(); i++) {
-            meshes[i].draw(shader, is_selected);
+            meshes[i].draw(shader, is_selected, rendering);
         }
     }
 

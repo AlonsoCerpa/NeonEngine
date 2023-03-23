@@ -26,6 +26,7 @@
 #include <glad/glad.h>
 
 class Shader;
+class Rendering;
 
 class Cylinder : public Model
 {
@@ -84,7 +85,7 @@ public:
     unsigned int getSideStartIndex() const  { return 0; }   // side starts from the begining
 
     // draw in VertexArray mode
-    void draw(Shader& shader, bool is_selected);          // draw all
+    void draw(Shader& shader, bool is_selected, Rendering* rendering);          // draw all
     void drawBase() const;      // draw base cap only
     void drawTop() const;       // draw top cap only
     void drawSide() const;      // draw side only

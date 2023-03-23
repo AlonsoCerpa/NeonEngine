@@ -59,7 +59,7 @@ public:
     }
 
     // render the mesh
-    void draw(Shader &shader, bool is_selected)
+    void draw(Shader &shader, bool is_selected, Rendering* rendering)
     {
         // Use the main shader
         shader.use();
@@ -100,8 +100,9 @@ public:
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
         }
 
-        shader.setInt("expand_vertices", 0);
-        shader.setInt("render_one_color", 0);
+        shader.setInt("expand_vertices", false);
+        shader.setInt("render_ambient_one_color", false);
+        shader.setInt("render_with_texture", true);
 
         // draw mesh
         glBindVertexArray(VAO);
@@ -109,8 +110,10 @@ public:
         glBindVertexArray(0);
 
         if (is_selected) {
-            shader.setInt("expand_vertices", 1);
-            shader.setInt("render_one_color", 1);
+            shader.setVec3("model_color", rendering->highlight_color);
+            shader.setInt("expand_vertices", true);
+            shader.setInt("render_ambient_one_color", true);
+            shader.setInt("render_with_texture", false);
 
             glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
             glStencilMask(0x00); // write only zeros to the stencil buffer (equivalent to not updating the stencil buffer)
