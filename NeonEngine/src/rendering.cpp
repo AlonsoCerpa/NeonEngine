@@ -232,10 +232,10 @@ void Rendering::set_viewport_models() {
     //loaded_models.push_back(new Cone(0.5f, 1.0f, 30, 1));
 
     // Cylinder
-    loaded_models.push_back(new Cylinder());
+    loaded_models.push_back(new Cylinder(1.0f, 1.0f, 1.0f, 36, 1, true, 3));
 
     // Cone
-    loaded_models.push_back(new Cylinder(1.0f, 0.0f));
+    loaded_models.push_back(new Cylinder(1.0f, 0.0f, 1.0f, 36, 1, true, 3));
 }
 
 void Rendering::create_and_set_viewport_framebuffer() {

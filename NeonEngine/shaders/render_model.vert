@@ -7,6 +7,8 @@ out vec3 FragPos;
 out vec3 Normal;
 out vec2 TexCoords;
 
+uniform vec3 viewPos;
+
 uniform mat4 model;
 uniform mat3 model_normals;
 uniform mat4 model_view_projection;
@@ -19,7 +21,7 @@ void main() {
     TexCoords = aTexCoords;
     vec3 pos = aPos;
     if (expand_vertices == 1) {
-        pos += 0.05 * aNormal;
+        pos += length(FragPos - viewPos) * 0.008 * aNormal;
     }
     gl_Position = model_view_projection * vec4(pos, 1.0);
 }
