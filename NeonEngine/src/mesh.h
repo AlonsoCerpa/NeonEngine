@@ -135,15 +135,26 @@ public:
     }
 
     bool intersected_ray(const glm::vec3& orig, const glm::vec3& dir, float& t) {
+        float min_t = std::numeric_limits<float>::max();
+        float t_aux;
         for (int i = 0; i < indices.size(); i += 3) {
             glm::vec3 v0 = vertices[i].Position;
             glm::vec3 v1 = vertices[i+1].Position;
             glm::vec3 v2 = vertices[i+2].Position;
-            if (ray_triangle_intersection(orig, dir, v0, v1, v2, t)) {
-                return true;
+            if (ray_triangle_intersection(orig, dir, v0, v1, v2, t_aux)) {
+                if (t_aux < min_t) {
+                    min_t = t_aux;
+                }
             }
         }
-        return false;
+        if (min_t != std::numeric_limits<float>::max()) {
+            t = min_t;
+            return true;
+        }
+        else {
+            t = -1.0f;
+            return false;
+        }
     }
 
 private:

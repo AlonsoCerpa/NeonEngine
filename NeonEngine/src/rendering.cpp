@@ -74,15 +74,7 @@ int Rendering::check_mouse_over_models() {
         float min_t = std::numeric_limits<float>::max();
         for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
             GameObject* game_object = it->second;
-            glm::vec3 ray_dir_model = game_object->model_inv * glm::vec4(ray_dir, 0.0f);
-            glm::vec3 ray_origin_model = game_object->model_inv * glm::vec4(camera_viewport->Position, 1.0f);
-
-            /*
-            if (game_object.idx_loaded_models != 0) {
-                continue;
-            }*/
-
-            if (loaded_models[game_object->idx_loaded_models]->intersected_ray(ray_origin_model, ray_dir_model, t)) {
+            if (game_object->intersected_ray(this, ray_dir, camera_viewport->Position, t)) {
                 if (t < min_t) {
                     min_t = t;
                     key_intersected_object = it->first;
@@ -104,39 +96,69 @@ void Rendering::initialize_game_objects() {
     int backpack1_key = key_generator->generate_key();
     game_objects[backpack1_key] = backpack1;
 
-    GameObject* backpack2 = new GameObject(0, glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), 60.0f);
+    GameObject* backpack2 = new GameObject(0, glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(60.0f, 0.0f, 0.0f));
     int backpack2_key = key_generator->generate_key();
     game_objects[backpack2_key] = backpack2;
 
-    GameObject* cylinder1 = new GameObject(1, glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.8f, 1.0f, 0.3f), 60.0f, glm::vec3(1.0f, 1.0f, 0.0f));
+    GameObject* cylinder1 = new GameObject(1, glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(45.0f, 60.0f, 20.0f), glm::vec3(1.0f, 1.0f, 0.0f));
     int cylinder1_key = key_generator->generate_key();
     game_objects[cylinder1_key] = cylinder1;
 
-    GameObject* cone1 = new GameObject(2, glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+    GameObject* cone1 = new GameObject(2, glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     int cone1_key = key_generator->generate_key();
     game_objects[cone1_key] = cone1;
 
-    GameObject* cylinder2 = new GameObject(1, glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+    GameObject* cylinder2 = new GameObject(1, glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     int cylinder2_key = key_generator->generate_key();
     game_objects[cylinder2_key] = cylinder2;
 
-    
 
-    GameObject* point_light1 = new PointLight(1, glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 1.0f, 1.0f), false,
+
+    GameObject* coord_axes_3D = new GameObject(-1, glm::vec3(0.0f, -3.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    int coord_axes_3D_key = key_generator->generate_key();
+    game_objects[coord_axes_3D_key] = coord_axes_3D;
+
+    GameObject* x_arrow_body = new GameObject(1, glm::vec3(0.0f, 0.0f, 1.5f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    x_arrow_body->set_model_matrices_type1(coord_axes_3D);
+    coord_axes_3D->children_game_objects.push_back(x_arrow_body);
+    
+    GameObject* y_arrow_body = new GameObject(1, glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(90.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    y_arrow_body->set_model_matrices_type1(coord_axes_3D);
+    coord_axes_3D->children_game_objects.push_back(y_arrow_body);
+
+    GameObject* z_arrow_body = new GameObject(1, glm::vec3(1.5f, 0.0f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    z_arrow_body->set_model_matrices_type1(coord_axes_3D);
+    coord_axes_3D->children_game_objects.push_back(z_arrow_body);
+
+    GameObject* x_arrow_head = new GameObject(2, glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    x_arrow_head->set_model_matrices_type1(coord_axes_3D);
+    coord_axes_3D->children_game_objects.push_back(x_arrow_head);
+
+    GameObject* y_arrow_head = new GameObject(2, glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(-90.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    y_arrow_head->set_model_matrices_type1(coord_axes_3D);
+    coord_axes_3D->children_game_objects.push_back(y_arrow_head);
+
+    GameObject* z_arrow_head = new GameObject(2, glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    z_arrow_head->set_model_matrices_type1(coord_axes_3D);
+    coord_axes_3D->children_game_objects.push_back(z_arrow_head);
+
+
+
+    GameObject* point_light1 = new PointLight(1, glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.045f, 0.0075f);
     int point_light1_key = key_generator->generate_key();
     game_objects[point_light1_key] = point_light1;
     point_lights[point_light1_key] = (PointLight*)point_light1;
 
 
-    GameObject* directional_light1 = new DirectionalLight(1, glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 1.0f, 1.0f), false,
+    GameObject* directional_light1 = new DirectionalLight(1, glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(3.0f, -4.0f, -3.0f));
     int directional_light1_key = key_generator->generate_key();
     game_objects[directional_light1_key] = directional_light1;
     directional_lights[directional_light1_key] = (DirectionalLight*)directional_light1;
 
 
-    GameObject* spot_light1 = new SpotLight(1, glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 1.0f, 1.0f), false,
+    GameObject* spot_light1 = new SpotLight(1, glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
         glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(5.0f, 5.0f, -3.0f),
         glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.09f, 0.032f);
     int spot_light1_key = key_generator->generate_key();
@@ -208,11 +230,7 @@ void Rendering::render_viewport() {
     // render all the game objects
     for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
         GameObject* game_object = it->second;
-        ourShader->setVec3("model_color", game_object->color);
-        ourShader->setMat4("model", game_object->model);
-        ourShader->setMat3("model_normals", glm::mat3(glm::transpose(glm::inverse(game_object->model))));
-        ourShader->setMat4("model_view_projection", projection * view * game_object->model);
-        loaded_models[game_object->idx_loaded_models]->draw(*ourShader, game_object->is_selected, this);
+        game_object->draw(ourShader, this);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
