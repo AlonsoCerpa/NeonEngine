@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_object.cpp" />
     <ClCompile Include="src\cylinder.cpp" />
     <ClCompile Include="src\geometry.cpp" />
     <ClCompile Include="src\rendering.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\neon_engine.h" />
     <ClInclude Include="src\user_interface.h" />
+    <ClInclude Include="src\transform3d.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\render_model.frag" />

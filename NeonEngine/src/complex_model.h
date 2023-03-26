@@ -34,16 +34,17 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    ComplexModel(string const& path, bool gamma = false) : gammaCorrection(gamma)
+    ComplexModel(const string& name, string const& path, bool gamma = false) : gammaCorrection(gamma)
     {
+        this->name = name;
         loadModel(path);
     }
 
     // draws the model, and thus all its meshes
-    void draw(Shader& shader, bool is_selected, Rendering* rendering)
+    void draw(Shader& shader, Rendering* rendering, bool is_selected, bool disable_depth_test)
     {
         for (unsigned int i = 0; i < meshes.size(); i++) {
-            meshes[i].draw(shader, is_selected, rendering);
+            meshes[i].draw(shader, rendering, is_selected, disable_depth_test);
         }
     }
 

@@ -49,12 +49,12 @@ void Input::process_viewport_input() {
     bool& firstMouse = neon_engine->firstMouse;
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         std::cout << "CLICKED" << std::endl;
-        int game_object_key = rendering->check_mouse_over_models();
+        std::string game_object_key = rendering->check_mouse_over_models();
         std::cout << "ENDED CHECKING" << std::endl;
-        if (rendering->key_selected_object != -1) {
+        if (rendering->key_selected_object != "") {
             rendering->game_objects[rendering->key_selected_object]->set_select_state(false);
         }
-        if (game_object_key != -1) {
+        if (game_object_key != "") {
             std::cout << "FOUND INTERSECTION" << std::endl;
             rendering->game_objects[game_object_key]->set_select_state(true);
             rendering->key_selected_object = game_object_key;

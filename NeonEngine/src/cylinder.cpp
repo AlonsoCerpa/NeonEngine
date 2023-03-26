@@ -40,9 +40,10 @@ const int MIN_STACK_COUNT  = 1;
 ///////////////////////////////////////////////////////////////////////////////
 // ctor
 ///////////////////////////////////////////////////////////////////////////////
-Cylinder::Cylinder(float baseRadius, float topRadius, float height, int sectors,
+Cylinder::Cylinder(const std::string& name, float baseRadius, float topRadius, float height, int sectors,
                    int stacks, bool smooth, int up) : interleavedStride(32)
 {
+    this->name = name;
     set(baseRadius, topRadius, height, sectors, stacks, smooth, up);
 }
 
@@ -209,9 +210,13 @@ bool Cylinder::intersected_ray(const glm::vec3& orig, const glm::vec3& dir, floa
 // draw a cylinder in VertexArray mode
 // OpenGL RC must be set before calling it
 ///////////////////////////////////////////////////////////////////////////////
-void Cylinder::draw(Shader& shader, bool is_selected, Rendering* rendering)
+void Cylinder::draw(Shader& shader, Rendering* rendering, bool is_selected, bool disable_depth_test)
 {
     shader.use();
+
+    if (disable_depth_test) {
+        glDisable(GL_DEPTH_TEST);
+    }
 
     // if mesh is selected then fill stencil buffer values with ones
     if (is_selected) {
@@ -255,6 +260,10 @@ void Cylinder::draw(Shader& shader, bool is_selected, Rendering* rendering)
 
     // always good practice to set everything back to defaults once configured.
     glActiveTexture(GL_TEXTURE0);
+
+    if (disable_depth_test) {
+        glEnable(GL_DEPTH_TEST);
+    }
 }
 
 

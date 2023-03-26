@@ -23,6 +23,7 @@
 #include "model.h"
 
 #include <vector>
+#include <string>
 #include <glad/glad.h>
 
 class Shader;
@@ -32,8 +33,8 @@ class Cylinder : public Model
 {
 public:
     // ctor/dtor
-    Cylinder(float baseRadius=1.0f, float topRadius=1.0f, float height=1.0f,
-             int sectorCount=36, int stackCount=1, bool smooth=true, int up=3);
+    Cylinder(const std::string& name = "", float baseRadius = 1.0f, float topRadius = 1.0f, float height = 1.0f,
+             int sectorCount = 36, int stackCount = 1, bool smooth = true, int up = 3);
     ~Cylinder() {}
 
     // getters/setters
@@ -85,7 +86,7 @@ public:
     unsigned int getSideStartIndex() const  { return 0; }   // side starts from the begining
 
     // draw in VertexArray mode
-    void draw(Shader& shader, bool is_selected, Rendering* rendering);          // draw all
+    void draw(Shader& shader, Rendering* rendering, bool is_selected, bool disable_depth_test);          // draw all
     void drawBase() const;      // draw base cap only
     void drawTop() const;       // draw top cap only
     void drawSide() const;      // draw side only

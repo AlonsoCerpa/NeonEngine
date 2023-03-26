@@ -8,6 +8,7 @@
 #include "cylinder.h"
 #include "game_object.h"
 #include "opengl_utils.h"
+#include "transform3d.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -26,8 +27,9 @@ Rendering::Rendering() {
     camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
     near_camera_viewport = 0.1f;
     far_camera_viewport = 100.0f;
-    key_selected_object = -1;
+    key_selected_object = "";
     key_generator = new KeyGenerator(1000000);
+    transform3d = new Transform3D();
     highlight_color = glm::vec3(255.0f/255.0f, 195.0f/255.0f, 7.0f/255.0f);
 }
 
@@ -49,71 +51,24 @@ void Rendering::initialize() {
     neon_engine = NeonEngine::get_instance();
 }
 
-int Rendering::check_mouse_over_models() {
-    int texture_viewport_width = user_interface->texture_viewport_width;
-    int texture_viewport_height = user_interface->texture_viewport_height;
-    view_projection = projection * view;
-    view_projection_inv = glm::inverse(view_projection);
-    ImGuiIO& io = ImGui::GetIO();
-    ImVec2 mouse_pos = io.MousePos;
-    ImVec2 window_pos = ImGui::GetWindowPos();
-    ImVec2 mouse_pos_in_window = ImVec2(mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y);
-    ImVec2& viewport_texture_pos = user_interface->viewport_texture_pos;
-    ImVec2 mouse_pos_in_viewport_texture = ImVec2(mouse_pos_in_window.x - viewport_texture_pos.x, mouse_pos_in_window.y - viewport_texture_pos.y);
-    if (mouse_pos_in_viewport_texture.x >= 0 && mouse_pos_in_viewport_texture.y >= 0 &&
-        mouse_pos_in_viewport_texture.x <= texture_viewport_width && mouse_pos_in_viewport_texture.y <= texture_viewport_height) {
-        float x_viewport = mouse_pos_in_viewport_texture.x * (2.0f / texture_viewport_width) - 1;
-        float y_viewport = -mouse_pos_in_viewport_texture.y * (2.0f / texture_viewport_height) + 1;
-        glm::vec4 mouse_viewport(x_viewport, y_viewport, -1.0f, 1.0f); // in clip space with near plane depth
-        glm::vec4 mouse_world = view_projection_inv * mouse_viewport;
-        mouse_world /= mouse_world.w;
-        glm::vec3 ray_dir = glm::normalize(glm::vec3(mouse_world) - camera_viewport->Position);
-
-        float t;
-        int key_intersected_object = -1;
-        float min_t = std::numeric_limits<float>::max();
-        for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
-            GameObject* game_object = it->second;
-            if (game_object->intersected_ray(this, ray_dir, camera_viewport->Position, t)) {
-                if (t < min_t) {
-                    min_t = t;
-                    key_intersected_object = it->first;
-                }
-            }
-        }
-        if (key_intersected_object != -1) {
-            return key_intersected_object;
-        }
-        else {
-            return -1;
-        }
-    }
-    return -1;
-}
-
 void Rendering::initialize_game_objects() {
-    GameObject* backpack1 = new GameObject(0, glm::vec3(0.0f, 0.0f, -5.0f));
-    int backpack1_key = key_generator->generate_key();
-    game_objects[backpack1_key] = backpack1;
+    GameObject* backpack1 = new GameObject("backpack1", "backpack", glm::vec3(0.0f, 0.0f, -5.0f));
+    game_objects[backpack1->name] = backpack1;
 
-    GameObject* backpack2 = new GameObject(0, glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(60.0f, 0.0f, 0.0f));
-    int backpack2_key = key_generator->generate_key();
-    game_objects[backpack2_key] = backpack2;
+    GameObject* backpack2 = new GameObject("backpack2", "backpack", glm::vec3(6.0f, 4.0f, -15.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(60.0f, 0.0f, 0.0f));
+    game_objects[backpack2->name] = backpack2;
 
-    GameObject* cylinder1 = new GameObject(1, glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(45.0f, 60.0f, 20.0f), glm::vec3(1.0f, 1.0f, 0.0f));
-    int cylinder1_key = key_generator->generate_key();
-    game_objects[cylinder1_key] = cylinder1;
+    GameObject* cylinder1 = new GameObject("cylinder1", "cylinder", glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(45.0f, 60.0f, 20.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+    game_objects[cylinder1->name] = cylinder1;
 
-    GameObject* cone1 = new GameObject(2, glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    int cone1_key = key_generator->generate_key();
-    game_objects[cone1_key] = cone1;
+    GameObject* cone1 = new GameObject("cone1", "cone", glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    game_objects[cone1->name] = cone1;
 
-    GameObject* cylinder2 = new GameObject(1, glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    int cylinder2_key = key_generator->generate_key();
-    game_objects[cylinder2_key] = cylinder2;
+    GameObject* cylinder2 = new GameObject("cylinder2", "cylinder", glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    game_objects[cylinder2->name] = cylinder2;
 
 
-
+    /*
     GameObject* coord_axes_3D = new GameObject(-1, glm::vec3(0.0f, -3.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     int coord_axes_3D_key = key_generator->generate_key();
     game_objects[coord_axes_3D_key] = coord_axes_3D;
@@ -141,29 +96,26 @@ void Rendering::initialize_game_objects() {
     GameObject* z_arrow_head = new GameObject(2, glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     z_arrow_head->set_model_matrices_type1(coord_axes_3D);
     coord_axes_3D->children_game_objects.push_back(z_arrow_head);
+    */
 
 
-
-    GameObject* point_light1 = new PointLight(1, glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
+    GameObject* point_light1 = new PointLight("point_light1", "cylinder", glm::vec3(1.0f, 1.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.045f, 0.0075f);
-    int point_light1_key = key_generator->generate_key();
-    game_objects[point_light1_key] = point_light1;
-    point_lights[point_light1_key] = (PointLight*)point_light1;
+    game_objects[point_light1->name] = point_light1;
+    point_lights[point_light1->name] = (PointLight*)point_light1;
 
 
-    GameObject* directional_light1 = new DirectionalLight(1, glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
+    GameObject* directional_light1 = new DirectionalLight("directional_light1", "cylinder", glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(3.0f, -4.0f, -3.0f));
-    int directional_light1_key = key_generator->generate_key();
-    game_objects[directional_light1_key] = directional_light1;
-    directional_lights[directional_light1_key] = (DirectionalLight*)directional_light1;
+    game_objects[directional_light1->name] = directional_light1;
+    directional_lights[directional_light1->name] = (DirectionalLight*)directional_light1;
 
 
-    GameObject* spot_light1 = new SpotLight(1, glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
+    GameObject* spot_light1 = new SpotLight("spot_light1", "cylinder", glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), false,
         glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(5.0f, 5.0f, -3.0f),
         glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.09f, 0.032f);
-    int spot_light1_key = key_generator->generate_key();
-    game_objects[spot_light1_key] = spot_light1;
-    spot_lights[spot_light1_key] = (SpotLight*)spot_light1;
+    game_objects[spot_light1->name] = spot_light1;
+    spot_lights[spot_light1->name] = (SpotLight*)spot_light1;
 }
 
 void Rendering::set_opengl_state() {
@@ -172,6 +124,35 @@ void Rendering::set_opengl_state() {
 
     glEnable(GL_STENCIL_TEST);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+}
+
+void Rendering::set_viewport_shaders() {
+    // build and compile shaders
+    ourShader = new Shader("shaders/render_model.vert", "shaders/render_model.frag");
+}
+
+void Rendering::set_viewport_models() {
+    // Backpack
+    Model* backpack = new ComplexModel("backpack", "models/backpack/backpack.obj");
+    loaded_models[backpack->name] = backpack;
+
+    // load basic shapes
+    //loaded_models.push_back(new Cylinder(0.5f, 1.0f, 30, 1));
+    //loaded_models.push_back(new Cone(0.5f, 1.0f, 30, 1));
+
+    // Cylinder
+    Model* cylinder = new Cylinder("cylinder", 1.0f, 1.0f, 1.0f, 36, 1, true, 3);
+    loaded_models[cylinder->name] = cylinder;
+
+    // Cone
+    Model* cone = new Cylinder("cone", 1.0f, 0.0f, 1.0f, 36, 1, true, 3);
+    loaded_models[cone->name] = cone;
+}
+
+void Rendering::create_and_set_viewport_framebuffer() {
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &rboDepthStencil, texture_viewport_width, texture_viewport_height);
 }
 
 void Rendering::render_viewport() {
@@ -230,46 +211,67 @@ void Rendering::render_viewport() {
     // render all the game objects
     for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
         GameObject* game_object = it->second;
-        game_object->draw(ourShader, this);
+        game_object->draw(ourShader, this, false);
+    }
+    if (key_selected_object != "") {
+        transform3d->update_model_matrices(this, game_objects[key_selected_object]);
+        transform3d->draw(ourShader, this);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Rendering::set_viewport_shaders() {
-    // build and compile shaders
-    ourShader = new Shader("shaders/render_model.vert", "shaders/render_model.frag");
-}
-
-void Rendering::set_viewport_models() {
-    // load complex models
-    loaded_models.push_back(new ComplexModel("models/backpack/backpack.obj"));
-
-    // load basic shapes
-    //loaded_models.push_back(new Cylinder(0.5f, 1.0f, 30, 1));
-    //loaded_models.push_back(new Cone(0.5f, 1.0f, 30, 1));
-
-    // Cylinder
-    loaded_models.push_back(new Cylinder(1.0f, 1.0f, 1.0f, 36, 1, true, 3));
-
-    // Cone
-    loaded_models.push_back(new Cylinder(1.0f, 0.0f, 1.0f, 36, 1, true, 3));
-}
-
-void Rendering::create_and_set_viewport_framebuffer() {
+std::string Rendering::check_mouse_over_models() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
-    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &rboDepthStencil, texture_viewport_width, texture_viewport_height);
+    view_projection = projection * view;
+    view_projection_inv = glm::inverse(view_projection);
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 mouse_pos = io.MousePos;
+    ImVec2 window_pos = ImGui::GetWindowPos();
+    ImVec2 mouse_pos_in_window = ImVec2(mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y);
+    ImVec2& viewport_texture_pos = user_interface->viewport_texture_pos;
+    ImVec2 mouse_pos_in_viewport_texture = ImVec2(mouse_pos_in_window.x - viewport_texture_pos.x, mouse_pos_in_window.y - viewport_texture_pos.y);
+    if (mouse_pos_in_viewport_texture.x >= 0 && mouse_pos_in_viewport_texture.y >= 0 &&
+        mouse_pos_in_viewport_texture.x <= texture_viewport_width && mouse_pos_in_viewport_texture.y <= texture_viewport_height) {
+        float x_viewport = mouse_pos_in_viewport_texture.x * (2.0f / texture_viewport_width) - 1;
+        float y_viewport = -mouse_pos_in_viewport_texture.y * (2.0f / texture_viewport_height) + 1;
+        glm::vec4 mouse_viewport(x_viewport, y_viewport, -1.0f, 1.0f); // in clip space with near plane depth
+        glm::vec4 mouse_world = view_projection_inv * mouse_viewport;
+        mouse_world /= mouse_world.w;
+        glm::vec3 ray_dir = glm::normalize(glm::vec3(mouse_world) - camera_viewport->Position);
+
+        float t;
+        std::string key_intersected_object = "";
+        float min_t = std::numeric_limits<float>::max();
+        for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
+            GameObject* game_object = it->second;
+            if (game_object->intersected_ray(this, ray_dir, camera_viewport->Position, t)) {
+                if (t < min_t) {
+                    min_t = t;
+                    key_intersected_object = it->first;
+                }
+            }
+        }
+        if (key_intersected_object != "") {
+            return key_intersected_object;
+        }
+        else {
+            return "";
+        }
+    }
+    return "";
 }
 
 void Rendering::clean() {
     delete ourShader;
-    for (int i = 0; i < loaded_models.size(); i++) {
-        delete loaded_models[i];
+    for (auto it = loaded_models.begin(); it != loaded_models.end(); it++) {
+        delete it->second;
     }
-    for (int i = 0; i < game_objects.size(); i++) {
-        delete game_objects[i];
+    for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
+        delete it->second;
     }
+    delete transform3d;
     delete camera_viewport;
     delete key_generator;
 }

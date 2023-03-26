@@ -18,6 +18,7 @@ class GameObject;
 class PointLight;
 class DirectionalLight;
 class SpotLight;
+class Transform3D;
 
 unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource);
 unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data);
@@ -71,7 +72,7 @@ public:
     void create_and_set_viewport_framebuffer();
     void clean();
     void clean_viewport_framebuffer();
-    int check_mouse_over_models();
+    std::string check_mouse_over_models();
     void initialize_game_objects();
 
     KeyGenerator* key_generator;
@@ -81,12 +82,13 @@ public:
     float near_camera_viewport, far_camera_viewport;
     unsigned int framebuffer, textureColorbuffer, rboDepthStencil;
     Shader* ourShader;
-    std::vector<Model*> loaded_models;
-    std::unordered_map<int, PointLight*> point_lights;
-    std::unordered_map<int, DirectionalLight*> directional_lights;
-    std::unordered_map<int, SpotLight*> spot_lights;
-    std::unordered_map<int, GameObject*> game_objects;
-    int key_selected_object;
+    std::unordered_map<std::string, Model*> loaded_models;
+    std::unordered_map<std::string, PointLight*> point_lights;
+    std::unordered_map<std::string, DirectionalLight*> directional_lights;
+    std::unordered_map<std::string, SpotLight*> spot_lights;
+    std::unordered_map<std::string, GameObject*> game_objects;
+    Transform3D* transform3d;
+    std::string key_selected_object;
     glm::vec3 highlight_color;
     UserInterface* user_interface;
     NeonEngine* neon_engine;

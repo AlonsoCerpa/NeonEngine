@@ -59,10 +59,14 @@ public:
     }
 
     // render the mesh
-    void draw(Shader &shader, bool is_selected, Rendering* rendering)
+    void draw(Shader &shader, Rendering* rendering, bool is_selected, bool disable_depth_test)
     {
         // Use the main shader
         shader.use();
+
+        if (disable_depth_test) {
+            glDisable(GL_DEPTH_TEST);
+        }
 
         // bind appropriate textures
         unsigned int diffuseNr  = 1;
@@ -132,6 +136,10 @@ public:
 
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
+
+        if (disable_depth_test) {
+            glEnable(GL_DEPTH_TEST);
+        }
     }
 
     bool intersected_ray(const glm::vec3& orig, const glm::vec3& dir, float& t) {
