@@ -26,12 +26,12 @@ public:
         this->type = type;
         this->scale_transform3d = scale_transform3d;
 
-        GameObject* x_arrow_body = new GameObject("x_arrow_body", "cylinder", glm::vec3(0.0f, 0.0f, 1.5f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        GameObject* x_arrow_head = new GameObject("x_arrow_head", "cone", glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        GameObject* y_arrow_body = new GameObject("y_arrow_body", "cylinder", glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(90.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        GameObject* y_arrow_head = new GameObject("y_arrow_head", "cone", glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(-90.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        GameObject* z_arrow_body = new GameObject("z_arrow_body", "cylinder", glm::vec3(1.5f, 0.0f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        GameObject* z_arrow_head = new GameObject("z_arrow_head", "cone", glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        GameObject* x_arrow_body = new GameObject("x_arrow_body", "cylinder", glm::vec3(0.0f, 0.0f, 1.5f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
+        GameObject* x_arrow_head = new GameObject("x_arrow_head", "cone", glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
+        GameObject* y_arrow_body = new GameObject("y_arrow_body", "cylinder", glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(90.0f, 0.0f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
+        GameObject* y_arrow_head = new GameObject("y_arrow_head", "cone", glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(-90.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
+        GameObject* z_arrow_body = new GameObject("z_arrow_body", "cylinder", glm::vec3(1.5f, 0.0f, 0.0f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
+        GameObject* z_arrow_head = new GameObject("z_arrow_head", "cone", glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
     
         translation_game_objects.push_back(x_arrow_body);
         translation_game_objects.push_back(x_arrow_head);
@@ -61,7 +61,7 @@ public:
         else if (type == ROTATION) {
             transformation_game_objects = &rotation_game_objects;
         }
-        else { // scaling
+        else { // SCALING
             transformation_game_objects = &scaling_game_objects;
         }
         for (int i = 0; i < transformation_game_objects->size(); i++) {
@@ -103,7 +103,7 @@ public:
                 rotation_game_objects[i]->draw(shader, rendering, true);
             }
         }
-        else { // scaling
+        else { // SCALING
             for (int i = 0; i < scaling_game_objects.size(); i++) {
                 scaling_game_objects[i]->draw(shader, rendering, true);
             }

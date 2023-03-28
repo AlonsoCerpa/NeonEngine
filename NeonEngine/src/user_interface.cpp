@@ -227,16 +227,10 @@ void UserInterface::render_ui() {
 
     ImVec2 pos1 = ImGui::GetCursorScreenPos();
     ImVec2 pos2(pos1.x + texture_viewport_width, pos1.y + texture_viewport_height);
-    //ImVec2 pos2(pos1.x + 800, pos1.y + 600);
-    //ImVec2 pos2(pos1.x + window_width / 2.0f, pos1.y + window_height / 2);
-
-
-    ImVec2 imgui_cursor = ImGui::GetCursorPos();
-    //std::cout << "Viewport - before drawing texture: " << imgui_cursor.x << " " << imgui_cursor.y << std::endl;
 
     viewport_texture_pos = ImGui::GetCursorPos();
     ImGui::GetWindowDrawList()->AddImage((void*)rendering->textureColorbuffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
-    ImGui::Text("This is some useful text.");
+    //ImGui::GetWindowDrawList()->AddImage((void*)rendering->texture_selected_color_buffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
 
     input->process_viewport_input();
 

@@ -142,6 +142,7 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\quad.h" />
     <ClInclude Include="src\opengl_utils.h" />
     <ClInclude Include="src\game_object.h" />
     <ClInclude Include="src\complex_model.h" />
@@ -159,8 +160,10 @@
     <ClInclude Include="src\transform3d.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\render_model.frag" />
-    <None Include="shaders\render_model.vert" />
+    <None Include="shaders\edge_outlining.frag" />
+    <None Include="shaders\phong_lighting.frag" />
+    <None Include="shaders\vertices_3d_model.vert" />
+    <None Include="shaders\vertices_quad.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

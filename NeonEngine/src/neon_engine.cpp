@@ -118,10 +118,8 @@ int NeonEngine::run() {
     
     user_interface->setup_imgui();
 
-
     // Our state
     ImGuiIO& io = ImGui::GetIO();
-
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
@@ -135,41 +133,11 @@ int NeonEngine::run() {
 
     rendering->initialize_game_objects();
     
-
-    /*
-    const char* vertexShaderSource = "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-        "}\0";
-    const char* fragmentShaderSource = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "void main()\n"
-        "{\n"
-        "   FragColor = vec4(0.1f, 0.1f, 1.0f, 1.0f);\n"
-        "}\n\0";
-
-    float vertex_data[] = {
-        -0.5f, -0.5f, 0.0f, // left  
-         0.5f, -0.5f, 0.0f, // right 
-         0.0f,  0.5f, 0.0f  // top   
-    };
-
-    int size_vertex_data = sizeof(vertex_data);
-
-    unsigned int shaderProgram = compile_shaders(vertexShaderSource, fragmentShaderSource);
-    unsigned int VAO = create_and_set_vao(vertex_data, size_vertex_data);*/
-    
-
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-
-        // input
-        //input->processInput();
 
         glfwPollEvents();
 
@@ -178,35 +146,11 @@ int NeonEngine::run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        /*
-        glViewport(0, 0, 800, 600);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-        glClearColor(1.0f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
-
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
-
-
-        
-
-
         user_interface->render_ui();
-
 
         // Rendering
         ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

@@ -1,5 +1,6 @@
 #version 330 core
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 SelectedColor;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
@@ -59,16 +60,22 @@ uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 
-uniform int render_ambient_one_color;
-uniform int render_with_texture;
+uniform int render_only_ambient;
+uniform int render_one_color;
+uniform int paint_selected_texture;
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main() { 
-	if (render_ambient_one_color == 1) {
-        FragColor = vec4(model_color, 1.0);
+	if (render_only_ambient == 1) {
+        if (render_one_color == 1) {
+            FragColor = vec4(model_color, 1.0);
+        }
+        else {
+            FragColor = vec4(vec3(texture(texture_diffuse1, TexCoords)), 1.0);
+        }
 	}
 	else {
         vec3 norm = normalize(Normal);
@@ -88,6 +95,13 @@ void main() {
 
 		FragColor = vec4(result, 1.0);
 	}
+
+    if (paint_selected_texture == 1) {
+        SelectedColor = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    else {
+        SelectedColor = vec4(0.0, 0.0, 0.0, 0.0);
+    }
 }
 
 // calculates the color when using a point light.
@@ -103,7 +117,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));    
     // combine results
     vec3 ambient, diffuse, specular;
-    if (render_with_texture == 1) {
+    if (render_one_color == 0) {
         ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
         diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, TexCoords));
         specular = light.specular * spec * vec3(texture(texture_specular1, TexCoords));
@@ -129,7 +143,7 @@ vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), SHININESS);
     // combine results
     vec3 ambient, diffuse, specular;
-    if (render_with_texture == 1) {
+    if (render_one_color == 0) {
         ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
         diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, TexCoords));
         specular = light.specular * spec * vec3(texture(texture_specular1, TexCoords));
@@ -159,7 +173,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     float intensity = clamp((theta - light.outer_cut_off) / epsilon, 0.0, 1.0);
     // combine results
     vec3 ambient, diffuse, specular;
-    if (render_with_texture == 1) {
+    if (render_one_color == 0) {
         ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
         diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, TexCoords));
         specular = light.specular * spec * vec3(texture(texture_specular1, TexCoords));

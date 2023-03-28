@@ -61,6 +61,7 @@ void Input::process_viewport_input() {
             std::cout << "INTERSECTION DETECTED: " << game_object_key << std::endl;
         }
         else {
+            rendering->key_selected_object = "";
             std::cout << "NOT INTERSECTION DETECTED" << std::endl;
         }
     }

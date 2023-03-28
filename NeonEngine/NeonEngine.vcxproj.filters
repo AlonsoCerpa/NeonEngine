@@ -92,12 +92,21 @@
     <ClInclude Include="src\transform3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\quad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\render_model.frag">
+    <None Include="shaders\phong_lighting.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\render_model.vert">
+    <None Include="shaders\vertices_3d_model.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\vertices_quad.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\edge_outlining.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

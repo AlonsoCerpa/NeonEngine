@@ -19,6 +19,7 @@ class PointLight;
 class DirectionalLight;
 class SpotLight;
 class Transform3D;
+class Quad;
 
 unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource);
 unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data);
@@ -79,9 +80,11 @@ public:
     glm::mat4 view, projection;
     glm::mat4 view_projection, view_projection_inv;
     Camera* camera_viewport;
+    Quad* screen_quad;
     float near_camera_viewport, far_camera_viewport;
-    unsigned int framebuffer, textureColorbuffer, rboDepthStencil;
-    Shader* ourShader;
+    unsigned int framebuffer, textureColorbuffer, texture_selected_color_buffer, rboDepthStencil;
+    Shader* phong_shader;
+    Shader* outline_shader;
     std::unordered_map<std::string, Model*> loaded_models;
     std::unordered_map<std::string, PointLight*> point_lights;
     std::unordered_map<std::string, DirectionalLight*> directional_lights;
@@ -89,7 +92,7 @@ public:
     std::unordered_map<std::string, GameObject*> game_objects;
     Transform3D* transform3d;
     std::string key_selected_object;
-    glm::vec3 highlight_color;
+    glm::vec3 outline_color;
     UserInterface* user_interface;
     NeonEngine* neon_engine;
 

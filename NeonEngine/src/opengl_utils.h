@@ -71,7 +71,7 @@ unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data) {
     return VAO;
 }
 
-void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* rboDepthStencil, int width, int height) {
+void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* texture_selected_color_buffer, unsigned int* rboDepthStencil, int width, int height) {
     int color_texture_width = width;
     int color_texture_height = height;
     int depth_stencil_rbo_width = width;
@@ -81,16 +81,30 @@ void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* texture
     glGenFramebuffers(1, framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer);
 
-    // Create and set Color Texture
+
+    // Create and set Color Texture for main rendering
     glGenTextures(1, textureColorbuffer);
     glBindTexture(GL_TEXTURE_2D, *textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, color_texture_width, color_texture_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, color_texture_width, color_texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Attach the Texture to the currently bound Framebuffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *textureColorbuffer, 0);
+
+
+    // Create and set Color Texture for rendering of selected objects
+    glGenTextures(1, texture_selected_color_buffer);
+    glBindTexture(GL_TEXTURE_2D, *texture_selected_color_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, color_texture_width, color_texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Attach the Texture to the currently bound Framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, *texture_selected_color_buffer, 0);
+
 
     // Create and set Depth and Stencil Renderbuffer
     glGenRenderbuffers(1, rboDepthStencil);
@@ -100,6 +114,10 @@ void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* texture
 
     // Attach the Renderbuffer to the currently bound Gramebuffer object
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *rboDepthStencil);
+
+    // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
