@@ -151,8 +151,8 @@ void Rendering::render_viewport() {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-    unsigned int attachments1[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(4, attachments1);
+    unsigned int attachments0[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(4, attachments0);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -162,6 +162,8 @@ void Rendering::render_viewport() {
     view = camera_viewport->GetViewMatrix();
     view_projection = projection * view;
 
+    unsigned int attachments1[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(3, attachments1);
     phong_shader->use();
 
     phong_shader->setVec3("viewPos", camera_viewport->Position);
@@ -224,7 +226,7 @@ void Rendering::render_viewport() {
     outline_shader->setVec3("outline_color", outline_color);
     screen_quad->draw(outline_shader, texture_selected_color_buffer, true);
 
-    glDrawBuffers(4, attachments1);
+    glDrawBuffers(3, attachments1);
     phong_shader->use();
     phong_shader->setInt("is_transform3d", 1);
     if (last_selected_object != nullptr) {
