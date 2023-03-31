@@ -4,6 +4,7 @@
 #include "rendering.h"
 #include "camera.h"
 #include "game_object.h"
+#include "transform3d.h"
 
 #include <GLFW/glfw3.h>
 #include <mutex>
@@ -15,6 +16,9 @@ std::mutex Input::input_mutex;
 Input::Input() {
     neon_engine = nullptr;
     rendering = nullptr;
+    last_mouse_pos_selecting = ImVec2(0.0f, 0.0f);
+    last_mouse_pos_transforming = ImVec2(0.0f, 0.0f);
+    transforming_selected_object = false;
 }
 
 Input::~Input() {
@@ -47,45 +51,77 @@ void Input::process_viewport_input() {
     Camera* camera_viewport = rendering->camera_viewport;
     float& deltaTime = neon_engine->deltaTime;
     bool& firstMouse = neon_engine->firstMouse;
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        std::cout << "CLICKED" << std::endl;
-        std::string game_object_key = rendering->check_mouse_over_models();
-        std::cout << "ENDED CHECKING" << std::endl;
-        if (rendering->key_selected_object != "") {
-            rendering->game_objects[rendering->key_selected_object]->set_select_state(false);
-        }
-        if (game_object_key != "") {
-            std::cout << "FOUND INTERSECTION" << std::endl;
-            rendering->game_objects[game_object_key]->set_select_state(true);
-            rendering->key_selected_object = game_object_key;
-            std::cout << "INTERSECTION DETECTED: " << game_object_key << std::endl;
+    ImVec2 current_mouse_pos = ImGui::GetMousePos();
+
+    if (transforming_selected_object) {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+            glm::vec2 transform_vector(current_mouse_pos.x - last_mouse_pos_transforming.x, last_mouse_pos_transforming.y - current_mouse_pos.y);
+            rendering->transform3d->transform(transform_vector);
+            last_mouse_pos_transforming = current_mouse_pos;
         }
         else {
-            rendering->key_selected_object = "";
-            std::cout << "NOT INTERSECTION DETECTED" << std::endl;
+            transforming_selected_object = false;
         }
     }
-    if (!firstMouse || (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right))) {
-        if (firstMouse) {
-            glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    else {
+        if (rendering->last_selected_object_transform3d != nullptr) {
+            rendering->transform3d->set_highlight(false);
+            rendering->last_selected_object_transform3d = nullptr;
         }
-        if (ImGui::IsKeyDown(ImGuiKey_W)) {
-            camera_viewport->ProcessKeyboard(FORWARD, deltaTime);
+        GameObject* selected_object_transform3d = rendering->check_mouse_over_transform3d();
+        if (selected_object_transform3d != nullptr) {
+            rendering->last_selected_object_transform3d = selected_object_transform3d;
+            rendering->transform3d->set_highlight(true);
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                transforming_selected_object = true;
+                last_mouse_pos_transforming = current_mouse_pos;
+            }
         }
-        if (ImGui::IsKeyDown(ImGuiKey_S)) {
-            camera_viewport->ProcessKeyboard(BACKWARD, deltaTime);
-        }
-        if (ImGui::IsKeyDown(ImGuiKey_A)) {
-            camera_viewport->ProcessKeyboard(LEFT, deltaTime);
-        }
-        if (ImGui::IsKeyDown(ImGuiKey_D)) {
-            camera_viewport->ProcessKeyboard(RIGHT, deltaTime);
-        }
-        mouse_rotate_camera();
     }
-    if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
-        glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        firstMouse = true;
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left, false)) {
+        last_mouse_pos_selecting = current_mouse_pos;
+    }
+    float squared_dist = (last_mouse_pos_selecting.x - current_mouse_pos.x) * (last_mouse_pos_selecting.x - current_mouse_pos.x);
+    squared_dist += (last_mouse_pos_selecting.y - current_mouse_pos.y) * (last_mouse_pos_selecting.y - current_mouse_pos.y);
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && squared_dist <= 25.0f) {
+        std::cout << "CLICKED" << std::endl;
+        if (rendering->last_selected_object != nullptr) {
+            rendering->last_selected_object->set_select_state(false);
+            rendering->last_selected_object = nullptr;
+        }
+        GameObject* selected_object = rendering->check_mouse_over_models();
+        if (selected_object != nullptr) {
+            std::cout << "FOUND INTERSECTION" << std::endl;
+            selected_object->set_select_state(true);
+            rendering->last_selected_object = selected_object;
+            std::cout << "INTERSECTION DETECTED: " << selected_object->name << std::endl;
+        }
+    }
+
+    if (!transforming_selected_object) {
+        if (!firstMouse || (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right))) {
+            if (firstMouse) {
+                glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+            if (ImGui::IsKeyDown(ImGuiKey_W)) {
+                camera_viewport->ProcessKeyboard(FORWARD, deltaTime);
+            }
+            if (ImGui::IsKeyDown(ImGuiKey_S)) {
+                camera_viewport->ProcessKeyboard(BACKWARD, deltaTime);
+            }
+            if (ImGui::IsKeyDown(ImGuiKey_A)) {
+                camera_viewport->ProcessKeyboard(LEFT, deltaTime);
+            }
+            if (ImGui::IsKeyDown(ImGuiKey_D)) {
+                camera_viewport->ProcessKeyboard(RIGHT, deltaTime);
+            }
+            mouse_rotate_camera();
+        }
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+            glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            firstMouse = true;
+        }
     }
 }
 

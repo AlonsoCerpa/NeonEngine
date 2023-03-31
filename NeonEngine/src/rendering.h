@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 class Camera;
 class Shader;
@@ -25,39 +27,6 @@ unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmen
 unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data);
 void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* rboDepthStencil, int width, int height);
 
-class KeyGenerator {
-public:
-    KeyGenerator(int max_num_keys) {
-        this->max_num_keys = max_num_keys;
-        this->available_keys = std::vector<int>(max_num_keys);
-        for (int i = max_num_keys - 1; i >= 0; i--) {
-            this->available_keys[max_num_keys-i-1] = i;
-        }
-    }
-
-    int generate_key() {
-        if (available_keys.empty()) {
-            std::cout << "Error: no available keys!" << std::endl;
-            return -1;
-        }
-        int key = available_keys.back();
-        available_keys.pop_back();
-        return key;
-    }
-
-    void return_key(int key) {
-        if (key < 0 || key >= max_num_keys) {
-            std::cout << "Error: invalid key!" << std::endl;
-            return;
-        }
-        available_keys.push_back(key);
-    }
-
-private:
-    int max_num_keys;
-    std::vector<int> available_keys;
-};
-
 class Rendering {
 public:
     static Rendering* get_instance();
@@ -73,25 +42,31 @@ public:
     void create_and_set_viewport_framebuffer();
     void clean();
     void clean_viewport_framebuffer();
-    std::string check_mouse_over_models();
+    GameObject* check_mouse_over_models();
+    std::string check_mouse_over_models2();
+    GameObject* check_mouse_over_transform3d();
     void initialize_game_objects();
 
-    KeyGenerator* key_generator;
     glm::mat4 view, projection;
     glm::mat4 view_projection, view_projection_inv;
     Camera* camera_viewport;
     Quad* screen_quad;
     float near_camera_viewport, far_camera_viewport;
-    unsigned int framebuffer, textureColorbuffer, texture_selected_color_buffer, rboDepthStencil;
+    unsigned int framebuffer, textureColorbuffer, texture_id_colors, texture_selected_color_buffer;
+    unsigned int texture_id_colors_transform3d, rboDepthStencil;
     Shader* phong_shader;
+    Shader* selection_shader;
     Shader* outline_shader;
+    std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object;
+    std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object_transform3d;
     std::unordered_map<std::string, Model*> loaded_models;
     std::unordered_map<std::string, PointLight*> point_lights;
     std::unordered_map<std::string, DirectionalLight*> directional_lights;
     std::unordered_map<std::string, SpotLight*> spot_lights;
     std::unordered_map<std::string, GameObject*> game_objects;
     Transform3D* transform3d;
-    std::string key_selected_object;
+    GameObject* last_selected_object;
+    GameObject* last_selected_object_transform3d;
     glm::vec3 outline_color;
     UserInterface* user_interface;
     NeonEngine* neon_engine;

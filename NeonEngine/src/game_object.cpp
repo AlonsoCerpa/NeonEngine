@@ -11,6 +11,8 @@
 
 //////////////////////////////// GAME_OBJECT //////////////////////////////////////
 
+ColorGenerator* GameObject::color_generator = new ColorGenerator(100000);
+
 GameObject::GameObject(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::vec3& rotation,
     const glm::vec3& scale, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color) {
     this->name = name;
@@ -22,6 +24,8 @@ GameObject::GameObject(const std::string& name, const std::string& model_name, c
     this->is_selected = is_selected;
     this->render_only_ambient = render_only_ambient;
     this->render_one_color = render_one_color;
+
+    this->id_color = color_generator->generate_color();
 
     set_model_matrices_standard();
 }
@@ -43,17 +47,20 @@ void GameObject::set_model_matrices_standard() {
     model_normals = glm::mat3(glm::transpose(model_inv));
 }
 
-void GameObject::draw(Shader* shader, Rendering* rendering, bool disable_depth_test) {
+void GameObject::draw(Shader* shader, bool disable_depth_test) {
+    Rendering* rendering = Rendering::get_instance();
     shader->setVec3("model_color", color);
     shader->setMat4("model", model);
     shader->setMat3("model_normals", model_normals);
-    shader->setMat4("model_view_projection", rendering->projection * rendering->view * model);
+    shader->setMat4("model_view_projection", rendering->view_projection * model);
+    glUniform3ui(glGetUniformLocation(shader->ID, "id_color_game_object"), id_color.r, id_color.g, id_color.b);
     if (model_name != "") {
         rendering->loaded_models[model_name]->draw(shader, is_selected, disable_depth_test, render_only_ambient, render_one_color);
     }
 }
 
-bool GameObject::intersected_ray(Rendering* rendering, const glm::vec3& ray_dir, const glm::vec3& camera_position, float& t) {
+bool GameObject::intersected_ray(const glm::vec3& ray_dir, const glm::vec3& camera_position, float& t) {
+    Rendering* rendering = Rendering::get_instance();
     glm::vec3 ray_dir_model = model_inv * glm::vec4(ray_dir, 0.0f);
     glm::vec3 ray_origin_model = model_inv * glm::vec4(camera_position, 1.0f);
     if (model_name != "" && rendering->loaded_models[model_name]->intersected_ray(ray_origin_model, ray_dir_model, t)) {
@@ -66,6 +73,9 @@ void GameObject::set_select_state(bool is_game_obj_selected) {
     is_selected = is_game_obj_selected;
 }
 
+void GameObject::clean() {
+    delete color_generator;
+}
 
 //////////////////////////////// LIGHTS //////////////////////////////////////
 

@@ -109,5 +109,6 @@
     <None Include="shaders\edge_outlining.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\paint_selected.frag" />
   </ItemGroup>
 </Project>

@@ -230,6 +230,8 @@ void UserInterface::render_ui() {
 
     viewport_texture_pos = ImGui::GetCursorPos();
     ImGui::GetWindowDrawList()->AddImage((void*)rendering->textureColorbuffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
+    //ImGui::GetWindowDrawList()->AddImage((void*)rendering->texture_id_colors, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
+    //ImGui::GetWindowDrawList()->AddImage((void*)rendering->texture_id_colors_transform3d, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
     //ImGui::GetWindowDrawList()->AddImage((void*)rendering->texture_selected_color_buffer, pos1, pos2, ImVec2(0, 1), ImVec2(1, 0));
 
     input->process_viewport_input();

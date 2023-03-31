@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <imgui.h>
 
 class NeonEngine;
 class Rendering;
@@ -15,6 +16,10 @@ public:
 
     Input(Input& other) = delete;
     void operator=(const Input&) = delete;
+
+    ImVec2 last_mouse_pos_selecting;
+    ImVec2 last_mouse_pos_transforming;
+    bool transforming_selected_object;
 
 private:
     Input();

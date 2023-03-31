@@ -1,6 +1,7 @@
 #version 330 core
 layout (location = 0) out vec4 FragColor;
-layout (location = 1) out vec4 SelectedColor;
+layout (location = 1) out vec4 IdColor;
+layout (location = 2) out vec4 IdColorTransform3d;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
@@ -62,13 +63,23 @@ uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 
 uniform int render_only_ambient;
 uniform int render_one_color;
-uniform int paint_selected_texture;
+uniform uvec3 id_color_game_object;
+uniform int is_transform3d;
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
-void main() { 
+void main() {
+    if (is_transform3d == 0) {
+        IdColor = vec4(id_color_game_object/255.0, 1.0);
+        IdColorTransform3d = vec4(0.0);
+    }
+    else {
+        IdColor = vec4(0.0);
+        IdColorTransform3d = vec4(id_color_game_object/255.0, 1.0);
+    }
+    
 	if (render_only_ambient == 1) {
         if (render_one_color == 1) {
             FragColor = vec4(model_color, 1.0);
@@ -95,13 +106,6 @@ void main() {
 
 		FragColor = vec4(result, 1.0);
 	}
-
-    if (paint_selected_texture == 1) {
-        SelectedColor = vec4(1.0, 1.0, 1.0, 1.0);
-    }
-    else {
-        SelectedColor = vec4(0.0, 0.0, 0.0, 0.0);
-    }
 }
 
 // calculates the color when using a point light.

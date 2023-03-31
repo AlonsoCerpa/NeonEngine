@@ -25,12 +25,13 @@ std::mutex Rendering::rendering_mutex;
 
 Rendering::Rendering() {
     phong_shader = nullptr;
+    selection_shader = nullptr;
+    outline_shader = nullptr;
     camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
     near_camera_viewport = 0.1f;
     far_camera_viewport = 100.0f;
-    key_selected_object = "";
-    key_generator = new KeyGenerator(1000000);
-    transform3d = new Transform3D();
+    last_selected_object = nullptr;
+    last_selected_object_transform3d = nullptr;
     outline_color = glm::vec3(255.0f/255.0f, 195.0f/255.0f, 7.0f/255.0f);
     screen_quad = nullptr;
 }
@@ -51,26 +52,33 @@ Rendering* Rendering::get_instance()
 void Rendering::initialize() {
     user_interface = UserInterface::get_instance();
     neon_engine = NeonEngine::get_instance();
+    transform3d = new Transform3D();
 }
 
 void Rendering::initialize_game_objects() {
     GameObject* backpack1 = new GameObject("backpack1", "backpack", glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(102.0f/255.0f, 0.0f/255.0f, 204.0f/255.0f), false, false, true);
     game_objects[backpack1->name] = backpack1;
+    id_color_to_game_object[backpack1->id_color] = backpack1;
 
     GameObject* backpack2 = new GameObject("backpack2", "backpack", glm::vec3(3.0f, 2.0f, -6.0f), glm::vec3(60.0f, 0.0f, 0.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f));
     game_objects[backpack2->name] = backpack2;
+    id_color_to_game_object[backpack2->id_color] = backpack2;
 
     GameObject* backpack3 = new GameObject("backpack3", "backpack", glm::vec3(-3.0f, 2.0f, -6.0f), glm::vec3(10.0f, 30.0f, 45.0f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(0.0f, 1.0f, 0.0f));
     game_objects[backpack3->name] = backpack3;
+    id_color_to_game_object[backpack3->id_color] = backpack3;
 
     GameObject* cylinder1 = new GameObject("cylinder1", "cylinder", glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(45.0f, 60.0f, 20.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f), false, false, true);
     game_objects[cylinder1->name] = cylinder1;
+    id_color_to_game_object[cylinder1->id_color] = cylinder1;
 
     GameObject* cone1 = new GameObject("cone1", "cone", glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, false, true);
     game_objects[cone1->name] = cone1;
+    id_color_to_game_object[cone1->id_color] = cone1;
 
     GameObject* cylinder2 = new GameObject("cylinder2", "cylinder", glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, false, true);
     game_objects[cylinder2->name] = cylinder2;
+    id_color_to_game_object[cylinder2->id_color] = cylinder2;
 
 
 
@@ -78,17 +86,20 @@ void Rendering::initialize_game_objects() {
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.045f, 0.0075f);
     game_objects[point_light1->name] = point_light1;
     point_lights[point_light1->name] = (PointLight*)point_light1;
+    id_color_to_game_object[point_light1->id_color] = point_light1;
 
     GameObject* directional_light1 = new DirectionalLight("directional_light1", "cylinder", glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), false, false, true,
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(3.0f, -4.0f, -3.0f));
     game_objects[directional_light1->name] = directional_light1;
     directional_lights[directional_light1->name] = (DirectionalLight*)directional_light1;
+    id_color_to_game_object[directional_light1->id_color] = directional_light1;
 
     GameObject* spot_light1 = new SpotLight("spot_light1", "cylinder", glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), false, false, true,
         glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(5.0f, 5.0f, -3.0f),
         glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.09f, 0.032f);
     game_objects[spot_light1->name] = spot_light1;
     spot_lights[spot_light1->name] = (SpotLight*)spot_light1;
+    id_color_to_game_object[spot_light1->id_color] = spot_light1;
 }
 
 void Rendering::set_opengl_state() {
@@ -105,6 +116,7 @@ void Rendering::set_opengl_state() {
 void Rendering::set_viewport_shaders() {
     // build and compile shaders
     phong_shader = new Shader("shaders/vertices_3d_model.vert", "shaders/phong_lighting.frag");
+    selection_shader = new Shader("shaders/vertices_3d_model.vert", "shaders/paint_selected.frag");
     outline_shader = new Shader("shaders/vertices_quad.vert", "shaders/edge_outlining.frag");
 }
 
@@ -128,7 +140,7 @@ void Rendering::set_viewport_models() {
 void Rendering::create_and_set_viewport_framebuffer() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
-    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &texture_selected_color_buffer, &rboDepthStencil, texture_viewport_width, texture_viewport_height);
+    create_and_set_framebuffer(&framebuffer, &textureColorbuffer, &texture_id_colors, &texture_id_colors_transform3d, &texture_selected_color_buffer, &rboDepthStencil, texture_viewport_width, texture_viewport_height);
 }
 
 void Rendering::render_viewport() {
@@ -138,11 +150,9 @@ void Rendering::render_viewport() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-
     // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-    unsigned int attachments1[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(2, attachments1);
-
+    unsigned int attachments1[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(4, attachments1);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -150,6 +160,7 @@ void Rendering::render_viewport() {
     // view/projection transformations
     projection = glm::perspective(glm::radians(camera_viewport->Zoom), (float)texture_viewport_width / (float)texture_viewport_height, near_camera_viewport, far_camera_viewport);
     view = camera_viewport->GetViewMatrix();
+    view_projection = projection * view;
 
     phong_shader->use();
 
@@ -192,33 +203,97 @@ void Rendering::render_viewport() {
         phong_shader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].outer_cut_off", it->second->outer_cut_off);
     }
 
-    // render all the game objects
+    phong_shader->setInt("is_transform3d", 0);
     for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
         GameObject* game_object = it->second;
-        game_object->draw(phong_shader, this, false);
-    }
-    if (key_selected_object != "") {
-        transform3d->update_model_matrices(this, game_objects[key_selected_object]);
-        transform3d->draw(phong_shader, this);
+        game_object->draw(phong_shader, false);
     }
 
-
-    // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-    unsigned int attachments2[1] = { GL_COLOR_ATTACHMENT0 };
+    unsigned int attachments2[1] = { GL_COLOR_ATTACHMENT3 };
     glDrawBuffers(1, attachments2);
+    selection_shader->use();
+    for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
+        GameObject* game_object = it->second;
+        game_object->draw(selection_shader, true);
+    }
 
-
+    unsigned int attachments3[1] = { GL_COLOR_ATTACHMENT0 }; // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+    glDrawBuffers(1, attachments3);
     outline_shader->use();
     outline_shader->setVec2("pixel_size", glm::vec2(1.0f / user_interface->texture_viewport_width, 1.0f / user_interface->texture_viewport_height));
     outline_shader->setVec3("outline_color", outline_color);
-    glDisable(GL_DEPTH_TEST);
-    screen_quad->draw(outline_shader, texture_selected_color_buffer);
-    glEnable(GL_DEPTH_TEST);
+    screen_quad->draw(outline_shader, texture_selected_color_buffer, true);
+
+    glDrawBuffers(4, attachments1);
+    phong_shader->use();
+    phong_shader->setInt("is_transform3d", 1);
+    if (last_selected_object != nullptr) {
+        transform3d->update_model_matrices(last_selected_object);
+        transform3d->draw(phong_shader);
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-std::string Rendering::check_mouse_over_models() {
+GameObject* Rendering::check_mouse_over_models() {
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 mouse_pos = io.MousePos;
+    ImVec2 window_pos = ImGui::GetWindowPos();
+    ImVec2 mouse_pos_in_window = ImVec2(mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y);
+    ImVec2& viewport_texture_pos = user_interface->viewport_texture_pos;
+    ImVec2 mouse_pos_in_viewport_texture = ImVec2(mouse_pos_in_window.x - viewport_texture_pos.x, mouse_pos_in_window.y - viewport_texture_pos.y);
+    std::cout << mouse_pos_in_viewport_texture.x << " " << texture_viewport_height - mouse_pos_in_viewport_texture.y << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT1);
+    GLubyte pixel[4];
+    pixel[0] = pixel[1] = pixel[2] = pixel[3] = 0;
+    glReadPixels(mouse_pos_in_viewport_texture.x, texture_viewport_height - mouse_pos_in_viewport_texture.y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    std::cout << "PIXEL: " << (int)pixel[0] << " " << (int)pixel[1] << " " << (int)pixel[2] << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    auto it = id_color_to_game_object.find(glm::u8vec3(pixel[0], pixel[1], pixel[2]));
+    if (it != id_color_to_game_object.end()) {
+        return it->second;
+    }
+    else {
+        return nullptr;
+    }
+}
+
+GameObject* Rendering::check_mouse_over_transform3d() {
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 mouse_pos = io.MousePos;
+    ImVec2 window_pos = ImGui::GetWindowPos();
+    ImVec2 mouse_pos_in_window = ImVec2(mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y);
+    ImVec2& viewport_texture_pos = user_interface->viewport_texture_pos;
+    ImVec2 mouse_pos_in_viewport_texture = ImVec2(mouse_pos_in_window.x - viewport_texture_pos.x, mouse_pos_in_window.y - viewport_texture_pos.y);
+    //std::cout << mouse_pos_in_viewport_texture.x << " " << texture_viewport_height - mouse_pos_in_viewport_texture.y << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT2);
+    GLubyte pixel[4];
+    pixel[0] = pixel[1] = pixel[2] = pixel[3] = 0;
+    glReadPixels(mouse_pos_in_viewport_texture.x, texture_viewport_height - mouse_pos_in_viewport_texture.y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    //std::cout << "PIXEL: " << (int)pixel[0] << " " << (int)pixel[1] << " " << (int)pixel[2] << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    auto it = id_color_to_game_object_transform3d.find(glm::u8vec3(pixel[0], pixel[1], pixel[2]));
+    if (it != id_color_to_game_object_transform3d.end()) {
+        return it->second;
+    }
+    else {
+        return nullptr;
+    }
+}
+
+std::string Rendering::check_mouse_over_models2() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
     view_projection = projection * view;
@@ -243,7 +318,7 @@ std::string Rendering::check_mouse_over_models() {
         float min_t = std::numeric_limits<float>::max();
         for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
             GameObject* game_object = it->second;
-            if (game_object->intersected_ray(this, ray_dir, camera_viewport->Position, t)) {
+            if (game_object->intersected_ray(ray_dir, camera_viewport->Position, t)) {
                 if (t < min_t) {
                     min_t = t;
                     key_intersected_object = it->first;
@@ -262,6 +337,7 @@ std::string Rendering::check_mouse_over_models() {
 
 void Rendering::clean() {
     delete phong_shader;
+    delete selection_shader;
     delete outline_shader;
     for (auto it = loaded_models.begin(); it != loaded_models.end(); it++) {
         delete it->second;
@@ -271,13 +347,15 @@ void Rendering::clean() {
     }
     delete transform3d;
     delete camera_viewport;
-    delete key_generator;
     delete screen_quad;
+    GameObject::clean();
 }
 
 void Rendering::clean_viewport_framebuffer() {
     glDeleteFramebuffers(1, &framebuffer);
     glDeleteTextures(1, &textureColorbuffer);
+    glDeleteTextures(1, &texture_id_colors);
+    glDeleteTextures(1, &texture_id_colors_transform3d);
     glDeleteTextures(1, &texture_selected_color_buffer);
     glDeleteRenderbuffers(1, &rboDepthStencil);
 }

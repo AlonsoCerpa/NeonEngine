@@ -160,6 +160,7 @@
     <ClInclude Include="src\transform3d.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\paint_selected.frag" />
     <None Include="shaders\edge_outlining.frag" />
     <None Include="shaders\phong_lighting.frag" />
     <None Include="shaders\vertices_3d_model.vert" />
