@@ -118,6 +118,24 @@ void Input::process_viewport_input() {
             }
             mouse_rotate_camera();
         }
+        else if (ImGui::IsKeyDown(ImGuiKey_W) || ImGui::IsKeyDown(ImGuiKey_E) || ImGui::IsKeyDown(ImGuiKey_R)) {
+            TransformType old_type = rendering->transform3d->type;
+            if (ImGui::IsKeyDown(ImGuiKey_W)) {
+                rendering->transform3d->type = TRANSLATION;
+            }
+            else if (ImGui::IsKeyDown(ImGuiKey_E)) {
+                rendering->transform3d->type = ROTATION;
+            }
+            else if (ImGui::IsKeyDown(ImGuiKey_R)) {
+                rendering->transform3d->type = SCALING;
+            }
+            if (rendering->last_selected_object_transform3d != nullptr && old_type != rendering->transform3d->type) {
+                TransformType new_type = rendering->transform3d->type;
+                rendering->transform3d->type = old_type;
+                rendering->transform3d->set_highlight(false);
+                rendering->transform3d->type = new_type;
+            }
+        }
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
             glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             firstMouse = true;

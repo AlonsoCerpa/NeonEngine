@@ -240,6 +240,9 @@ void Rendering::render_viewport() {
     outline_shader->setVec3("outline_color", outline_color);
     screen_quad->draw(outline_shader, texture_selected_color_buffer, true);
 
+
+    glClear(GL_DEPTH_BUFFER_BIT); // Clear the depth buffer so it doesn't affect the Transform3D draw call
+
     glDrawBuffers(3, attachments1);
     phong_shader->use();
     phong_shader->setInt("is_transform3d", 1);
