@@ -138,10 +138,12 @@
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\neon_engine.cpp" />
+    <ClCompile Include="src\sphere.cpp" />
     <ClCompile Include="src\user_interface.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\cube.h" />
     <ClInclude Include="src\quad.h" />
     <ClInclude Include="src\opengl_utils.h" />
     <ClInclude Include="src\game_object.h" />
@@ -156,6 +158,7 @@
     <ClInclude Include="src\imgui_extension.h" />
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\neon_engine.h" />
+    <ClInclude Include="src\sphere.h" />
     <ClInclude Include="src\user_interface.h" />
     <ClInclude Include="src\transform3d.h" />
   </ItemGroup>

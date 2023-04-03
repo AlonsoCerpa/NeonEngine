@@ -210,8 +210,7 @@ bool Cylinder::intersected_ray(const glm::vec3& orig, const glm::vec3& dir, floa
 // draw a cylinder in VertexArray mode
 // OpenGL RC must be set before calling it
 ///////////////////////////////////////////////////////////////////////////////
-void Cylinder::draw(Shader* shader, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color)
-{
+void Cylinder::draw(Shader* shader, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color) {
     if (disable_depth_test) {
         glDisable(GL_DEPTH_TEST);
     }
@@ -329,14 +328,13 @@ void Cylinder::drawLines(const float lineColor[4]) const
 ///////////////////////////////////////////////////////////////////////////////
 void Cylinder::drawWithLines(const float lineColor[4]) const
 {
-    /*
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(1.0, 1.0f); // move polygon backward
-    this->draw();
+    //this->draw();
     glDisable(GL_POLYGON_OFFSET_FILL);
 
     // draw lines with VA
-    drawLines(lineColor);*/
+    drawLines(lineColor);
 }
 
 

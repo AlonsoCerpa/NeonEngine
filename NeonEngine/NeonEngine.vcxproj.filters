@@ -45,6 +45,9 @@
     <ClCompile Include="src\game_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\sphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\neon_engine.h">
@@ -95,6 +98,12 @@
     <ClInclude Include="src\quad.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\cube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\phong_lighting.frag">
@@ -109,6 +118,8 @@
     <None Include="shaders\edge_outlining.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\paint_selected.frag" />
+    <None Include="shaders\paint_selected.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
