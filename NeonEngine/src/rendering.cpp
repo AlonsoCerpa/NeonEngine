@@ -12,6 +12,7 @@
 #include "quad.h"
 #include "cube.h"
 #include "sphere.h"
+#include "disk_border.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -104,52 +105,64 @@ void Rendering::set_viewport_models() {
     // Sphere
     Model* sphere = new Sphere("sphere");
     loaded_models[sphere->name] = sphere;
+
+    // Disk border
+    Model* disk_border = new DiskBorder("disk_border", 2.0f * M_PI);
+    loaded_models[disk_border->name] = disk_border;
+
+    // Quarter of a disk border
+    Model* quarter_disk_border = new DiskBorder("quarter_disk_border", M_PI / 2.0f, 1.0f, 1.3f);
+    loaded_models[quarter_disk_border->name] = quarter_disk_border;
 }
 
 void Rendering::initialize_game_objects() {
-    GameObject* backpack1 = new GameObject("backpack1", "backpack", glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(102.0f/255.0f, 0.0f/255.0f, 204.0f/255.0f), false, false, true);
+    GameObject* backpack1 = new GameObject("backpack1", "backpack", glm::vec3(0.0f, 0.0f, -5.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(102.0f/255.0f, 0.0f/255.0f, 204.0f/255.0f), false, false, true);
     game_objects[backpack1->name] = backpack1;
     id_color_to_game_object[backpack1->id_color] = backpack1;
 
-    GameObject* backpack2 = new GameObject("backpack2", "backpack", glm::vec3(3.0f, 2.0f, -6.0f), glm::vec3(60.0f, 0.0f, 0.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f));
+    GameObject* backpack2 = new GameObject("backpack2", "backpack", glm::vec3(3.0f, 2.0f, -6.0f), glm::angleAxis(glm::radians(60.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 1.0f, 0.0f));
     game_objects[backpack2->name] = backpack2;
     id_color_to_game_object[backpack2->id_color] = backpack2;
 
-    GameObject* backpack3 = new GameObject("backpack3", "backpack", glm::vec3(-3.0f, 2.0f, -6.0f), glm::vec3(10.0f, 30.0f, 45.0f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(0.0f, 1.0f, 0.0f));
+    GameObject* backpack3 = new GameObject("backpack3", "backpack", glm::vec3(-3.0f, 2.0f, -6.0f), glm::angleAxis(glm::radians(60.0f), glm::normalize(glm::vec3(1.0f, 0.3f, 0.8f))), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(0.0f, 1.0f, 0.0f));
     game_objects[backpack3->name] = backpack3;
     id_color_to_game_object[backpack3->id_color] = backpack3;
 
-    GameObject* cylinder1 = new GameObject("cylinder1", "cylinder", glm::vec3(3.0f, 7.0f, -6.0f), glm::vec3(45.0f, 60.0f, 20.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f), false, false, true);
+    GameObject* cylinder1 = new GameObject("cylinder1", "cylinder", glm::vec3(3.0f, 7.0f, -6.0f), glm::angleAxis(glm::radians(45.0f), glm::normalize(glm::vec3(0.8f, 0.6f, 1.0f))), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f), false, false, true);
     game_objects[cylinder1->name] = cylinder1;
     id_color_to_game_object[cylinder1->id_color] = cylinder1;
 
-    GameObject* cone1 = new GameObject("cone1", "cone", glm::vec3(-3.0f, 7.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, false, true);
+    GameObject* cone1 = new GameObject("cone1", "cone", glm::vec3(-3.0f, 7.0f, -6.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, false, true);
     game_objects[cone1->name] = cone1;
     id_color_to_game_object[cone1->id_color] = cone1;
 
-    GameObject* cylinder2 = new GameObject("cylinder2", "cylinder", glm::vec3(-3.0f, -7.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, false, true);
+    GameObject* cylinder2 = new GameObject("cylinder2", "cylinder", glm::vec3(-3.0f, -7.0f, -6.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, false, true);
     game_objects[cylinder2->name] = cylinder2;
     id_color_to_game_object[cylinder2->id_color] = cylinder2;
     
-    GameObject* cube1 = new GameObject("cube1", "cube", glm::vec3(2.5f, -1.5f, -4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.8f, 0.2f, 0.4f), false, false, true);
+    GameObject* cube1 = new GameObject("cube1", "cube", glm::vec3(2.5f, -1.5f, -4.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.8f, 0.2f, 0.4f), false, false, true);
     game_objects[cube1->name] = cube1;
     id_color_to_game_object[cube1->id_color] = cube1;
+
+    GameObject* disk_border1 = new GameObject("disk_border1", "disk_border", glm::vec3(3.5f, 1.5f, -4.5f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), false, false, true);
+    game_objects[disk_border1->name] = disk_border1;
+    id_color_to_game_object[disk_border1->id_color] = disk_border1;
     
 
 
-    GameObject* point_light1 = new PointLight("point_light1", "sphere", glm::vec3(3.0f, 3.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f), false, false, true,
+    GameObject* point_light1 = new PointLight("point_light1", "sphere", glm::vec3(3.0f, 3.0f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 0.0f), false, false, true,
         glm::vec3(0.05f, 0.05f, 0.00f), glm::vec3(0.8f, 0.8f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f), 1.0f, 0.045f, 0.0075f);
     game_objects[point_light1->name] = point_light1;
     point_lights[point_light1->name] = (PointLight*)point_light1;
     id_color_to_game_object[point_light1->id_color] = point_light1;
 
-    GameObject* directional_light1 = new DirectionalLight("directional_light1", "sphere", glm::vec3(-5.0f, 5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), false, false, true,
+    GameObject* directional_light1 = new DirectionalLight("directional_light1", "sphere", glm::vec3(-5.0f, 5.0f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), false, false, true,
         glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(0.4f, 0.4f, 0.4f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(3.0f, -4.0f, -3.0f));
     game_objects[directional_light1->name] = directional_light1;
     directional_lights[directional_light1->name] = (DirectionalLight*)directional_light1;
     id_color_to_game_object[directional_light1->id_color] = directional_light1;
 
-    GameObject* spot_light1 = new SpotLight("spot_light1", "sphere", glm::vec3(-5.0f, -5.0f, -3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), false, false, true,
+    GameObject* spot_light1 = new SpotLight("spot_light1", "sphere", glm::vec3(-5.0f, -5.0f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), false, false, true,
         glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(5.0f, 5.0f, -3.0f),
         glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)), 1.0f, 0.09f, 0.032f);
     game_objects[spot_light1->name] = spot_light1;

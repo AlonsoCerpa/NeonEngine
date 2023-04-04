@@ -13,7 +13,7 @@
 
 ColorGenerator* GameObject::color_generator = new ColorGenerator(100000);
 
-GameObject::GameObject(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::vec3& rotation,
+GameObject::GameObject(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::quat& rotation,
     const glm::vec3& scale, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color) {
     this->name = name;
     this->model_name = model_name;
@@ -37,9 +37,7 @@ GameObject::~GameObject() {
 void GameObject::set_model_matrices_standard() {
     model = glm::mat4(1.0f);
     model = glm::translate(model, position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    model *= glm::mat4_cast(rotation);
     model = glm::scale(model, scale);
 
     model_inv = glm::inverse(model);
@@ -79,32 +77,32 @@ void GameObject::clean() {
 
 //////////////////////////////// LIGHTS //////////////////////////////////////
 
-Light::Light(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::vec3& scale, const glm::vec3& rotation, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
+Light::Light(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
     const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular)
-    : GameObject(name, model_name, position, scale, rotation, color, is_selected, render_only_ambient, render_one_color) {
+    : GameObject(name, model_name, position, rotation, scale, color, is_selected, render_only_ambient, render_one_color) {
     this->ambient = ambient;
     this->diffuse = diffuse;
     this->specular = specular;
 }
 
-PointLight::PointLight(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::vec3& scale, const glm::vec3& rotation, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
+PointLight::PointLight(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
     const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, float constant, float linear, float quadratic)
-    : Light(name, model_name, position, scale, rotation, color, is_selected, render_only_ambient, render_one_color, ambient, diffuse, specular) {
+    : Light(name, model_name, position, rotation, scale, color, is_selected, render_only_ambient, render_one_color, ambient, diffuse, specular) {
     this->constant = constant;
     this->linear = linear;
     this->quadratic = quadratic;
 }
 
-DirectionalLight::DirectionalLight(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::vec3& scale, const glm::vec3& rotation, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
+DirectionalLight::DirectionalLight(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
     const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, const glm::vec3& direction)
-    : Light(name, model_name, position, scale, rotation, color, is_selected, render_only_ambient, render_one_color, ambient, diffuse, specular) {
+    : Light(name, model_name, position, rotation, scale, color, is_selected, render_only_ambient, render_one_color, ambient, diffuse, specular) {
     this->direction = direction;
 }
 
-SpotLight::SpotLight(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::vec3& scale, const glm::vec3& rotation, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
+SpotLight::SpotLight(const std::string& name, const std::string& model_name, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale, const glm::vec3& color, bool is_selected, bool render_only_ambient, bool render_one_color,
     const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, const glm::vec3& direction, float inner_cut_off, float outer_cut_off,
     float constant, float linear, float quadratic)
-    : Light(name, model_name, position, scale, rotation, color, is_selected, render_only_ambient, render_one_color, ambient, diffuse, specular) {
+    : Light(name, model_name, position, rotation, scale, color, is_selected, render_only_ambient, render_one_color, ambient, diffuse, specular) {
     this->direction = direction;
 
     this->inner_cut_off = inner_cut_off;

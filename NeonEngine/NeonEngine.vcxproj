@@ -143,6 +143,7 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\disk_border.h" />
     <ClInclude Include="src\cube.h" />
     <ClInclude Include="src\quad.h" />
     <ClInclude Include="src\opengl_utils.h" />

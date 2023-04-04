@@ -104,6 +104,9 @@
     <ClInclude Include="src\sphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\disk_border.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\phong_lighting.frag">

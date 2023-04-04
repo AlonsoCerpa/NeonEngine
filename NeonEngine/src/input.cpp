@@ -51,7 +51,10 @@ void Input::process_viewport_input() {
     Camera* camera_viewport = rendering->camera_viewport;
     float& deltaTime = neon_engine->deltaTime;
     bool& firstMouse = neon_engine->firstMouse;
-    ImVec2 current_mouse_pos = ImGui::GetMousePos();
+    //ImVec2 current_mouse_pos = ImGui::GetMousePos();
+    double current_mouse_pos_x, current_mouse_pos_y;
+    glfwGetCursorPos(neon_engine->window, &current_mouse_pos_x, &current_mouse_pos_y);
+    ImVec2 current_mouse_pos(current_mouse_pos_x, current_mouse_pos_y);
 
     if (transforming_selected_object) {
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
@@ -60,6 +63,9 @@ void Input::process_viewport_input() {
             last_mouse_pos_transforming = current_mouse_pos;
         }
         else {
+            if (rendering->transform3d->type != TRANSLATION) {
+                glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
             transforming_selected_object = false;
         }
     }
@@ -73,6 +79,9 @@ void Input::process_viewport_input() {
             rendering->last_selected_object_transform3d = selected_object_transform3d;
             rendering->transform3d->set_highlight(true);
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                if (rendering->transform3d->type != TRANSLATION) {
+                    glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
                 transforming_selected_object = true;
                 last_mouse_pos_transforming = current_mouse_pos;
             }
