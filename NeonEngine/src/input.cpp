@@ -78,7 +78,7 @@ void Input::process_viewport_input() {
         if (selected_object_transform3d != nullptr) {
             rendering->last_selected_object_transform3d = selected_object_transform3d;
             rendering->transform3d->set_highlight(true);
-            if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left, false)) {
                 if (rendering->transform3d->type != TRANSLATION) {
                     glfwSetInputMode(neon_engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 }
