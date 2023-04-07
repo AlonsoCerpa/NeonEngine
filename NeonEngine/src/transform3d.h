@@ -144,7 +144,8 @@ public:
             glm::vec2 arrow(model_view_projection * axis);
             arrow = glm::normalize(arrow);
             float delta_transformation = glm::dot(arrow, transform_vector);
-            rendering->last_selected_object->rotation *= glm::angleAxis(delta_transformation * VELOCITY_ROTATION, glm::vec3(axis));
+            glm::vec3 rotated_axis = rendering->last_selected_object->rotation * glm::vec3(axis);
+            rendering->last_selected_object->rotation = glm::angleAxis(delta_transformation * VELOCITY_ROTATION, rotated_axis) * rendering->last_selected_object->rotation;
             rendering->last_selected_object->set_model_matrices_standard();
         }
         else { // SCALING
