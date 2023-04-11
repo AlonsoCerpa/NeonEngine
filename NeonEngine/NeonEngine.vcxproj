@@ -148,12 +148,12 @@
     <ClInclude Include="src\quad.h" />
     <ClInclude Include="src\opengl_utils.h" />
     <ClInclude Include="src\game_object.h" />
-    <ClInclude Include="src\complex_model.h" />
+    <ClInclude Include="src\model.h" />
     <ClInclude Include="src\cylinder.h" />
     <ClInclude Include="src\geometry.h" />
     <ClInclude Include="src\rendering.h" />
     <ClInclude Include="src\mesh.h" />
-    <ClInclude Include="src\model.h" />
+    <ClInclude Include="src\base_model.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\imgui_extension.h" />

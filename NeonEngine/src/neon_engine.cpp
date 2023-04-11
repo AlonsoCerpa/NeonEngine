@@ -121,9 +121,6 @@ int NeonEngine::run() {
     // Our state
     ImGuiIO& io = ImGui::GetIO();
 
-    // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
-
     // configure global opengl state
     rendering->set_opengl_state();
 
@@ -132,6 +129,8 @@ int NeonEngine::run() {
     rendering->set_viewport_models();
 
     rendering->initialize_game_objects();
+
+    rendering->set_time_before_rendering_loop();
     
     while (!glfwWindowShouldClose(window))
     {

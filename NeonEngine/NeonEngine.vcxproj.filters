@@ -68,7 +68,7 @@
     <ClInclude Include="src\mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\model.h">
+    <ClInclude Include="src\base_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\shader.h">
@@ -83,7 +83,7 @@
     <ClInclude Include="src\cylinder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\complex_model.h">
+    <ClInclude Include="src\model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_object.h">

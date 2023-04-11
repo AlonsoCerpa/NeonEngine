@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "model.h"
+#include "base_model.h"
 
 #include <vector>
 #include <string>
@@ -29,7 +29,7 @@
 class Shader;
 class Rendering;
 
-class Cylinder : public Model
+class Cylinder : public BaseModel
 {
 public:
     // ctor/dtor

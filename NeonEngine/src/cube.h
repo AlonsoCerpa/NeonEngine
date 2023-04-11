@@ -1,13 +1,13 @@
 #pragma once
 
-#include "model.h"
+#include "base_model.h"
 #include "shader.h"
 
 #include <vector>
 #include <glad/glad.h>
 #include <string>
 
-class Cube : public Model {
+class Cube : public BaseModel {
 public:
     std::vector<float> vertices;
     unsigned int VAO;

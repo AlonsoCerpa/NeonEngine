@@ -28,12 +28,12 @@ public:
         this->scale_transform3d = scale_transform3d;
 
         // Translation game objects
-        GameObject* z_arrow_body_translation = new GameObject("z_arrow_body_translation", "cylinder", glm::vec3(0.0f, 0.0f, 1.5f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
-        GameObject* z_arrow_head_translation = new GameObject("z_arrow_head_translation", "cone", glm::vec3(0.0f, 0.0f, 3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
-        GameObject* y_arrow_body_translation = new GameObject("y_arrow_body_translation", "cylinder", glm::vec3(0.0f, 1.5f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
-        GameObject* y_arrow_head_translation = new GameObject("y_arrow_head_translation", "cone", glm::vec3(0.0f, 3.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
-        GameObject* x_arrow_body_translation = new GameObject("x_arrow_body_translation", "cylinder", glm::vec3(1.5f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
-        GameObject* x_arrow_head_translation = new GameObject("x_arrow_head_translation", "cone", glm::vec3(3.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
+        GameObject* z_arrow_body_translation = new GameObject("z_arrow_body_translation", "cylinder", glm::vec3(0.0f, 0.0f, 1.5f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), -1, false, true, true);
+        GameObject* z_arrow_head_translation = new GameObject("z_arrow_head_translation", "cone", glm::vec3(0.0f, 0.0f, 3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 0.0f, 1.0f), -1, false, true, true);
+        GameObject* y_arrow_body_translation = new GameObject("y_arrow_body_translation", "cylinder", glm::vec3(0.0f, 1.5f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -1, false, true, true);
+        GameObject* y_arrow_head_translation = new GameObject("y_arrow_head_translation", "cone", glm::vec3(0.0f, 3.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(0.0f, 1.0f, 0.0f), -1, false, true, true);
+        GameObject* x_arrow_body_translation = new GameObject("x_arrow_body_translation", "cylinder", glm::vec3(1.5f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(1.0f, 0.0f, 0.0f), -1, false, true, true);
+        GameObject* x_arrow_head_translation = new GameObject("x_arrow_head_translation", "cone", glm::vec3(3.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.3f, 0.3f, 0.6f), glm::vec3(1.0f, 0.0f, 0.0f), -1, false, true, true);
     
         translation_game_objects[x_arrow_body_translation->name] = x_arrow_body_translation;
         translation_game_objects[x_arrow_head_translation->name] = x_arrow_head_translation;
@@ -44,9 +44,9 @@ public:
 
 
         // Rotation game objects
-        GameObject* z_quarter_disk_rotation = new GameObject("z_quarter_disk_rotation", "quarter_disk_border", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
-        GameObject* y_quarter_disk_rotation = new GameObject("y_quarter_disk_rotation", "quarter_disk_border", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(2.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
-        GameObject* x_quarter_disk_rotation = new GameObject("x_quarter_disk_rotation", "quarter_disk_border", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(2.0f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
+        GameObject* z_quarter_disk_rotation = new GameObject("z_quarter_disk_rotation", "quarter_disk_border", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(2.0f), glm::vec3(0.0f, 0.0f, 1.0f), -1, false, true, true);
+        GameObject* y_quarter_disk_rotation = new GameObject("y_quarter_disk_rotation", "quarter_disk_border", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(2.0f), glm::vec3(0.0f, 1.0f, 0.0f), -1, false, true, true);
+        GameObject* x_quarter_disk_rotation = new GameObject("x_quarter_disk_rotation", "quarter_disk_border", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(2.0f), glm::vec3(1.0f, 0.0f, 0.0f), -1, false, true, true);
 
         rotation_game_objects[z_quarter_disk_rotation->name] = z_quarter_disk_rotation;
         rotation_game_objects[y_quarter_disk_rotation->name] = y_quarter_disk_rotation;
@@ -54,13 +54,13 @@ public:
 
 
         // Scaling game objects
-        GameObject* z_arrow_body_scaling = new GameObject("z_arrow_body_scaling", "cylinder", glm::vec3(0.0f, 0.0f, 1.5f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
-        GameObject* z_arrow_head_scaling = new GameObject("z_arrow_head_scaling", "cube", glm::vec3(0.0f, 0.0f, 3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.6f, 0.6f, 0.6f), glm::vec3(0.0f, 0.0f, 1.0f), false, true, true);
-        GameObject* y_arrow_body_scaling = new GameObject("y_arrow_body_scaling", "cylinder", glm::vec3(0.0f, 1.5f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
-        GameObject* y_arrow_head_scaling = new GameObject("y_arrow_head_scaling", "cube", glm::vec3(0.0f, 3.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.6f, 0.6f, 0.6f), glm::vec3(0.0f, 1.0f, 0.0f), false, true, true);
-        GameObject* x_arrow_body_scaling = new GameObject("x_arrow_body_scaling", "cylinder", glm::vec3(1.5f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
-        GameObject* x_arrow_head_scaling = new GameObject("x_arrow_head_scaling", "cube", glm::vec3(3.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.6f, 0.6f, 0.6f), glm::vec3(1.0f, 0.0f, 0.0f), false, true, true);
-        GameObject* cube_center_scaling = new GameObject("cube_center_scaling", "cube", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), false, true, true);
+        GameObject* z_arrow_body_scaling = new GameObject("z_arrow_body_scaling", "cylinder", glm::vec3(0.0f, 0.0f, 1.5f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), -1, false, true, true);
+        GameObject* z_arrow_head_scaling = new GameObject("z_arrow_head_scaling", "cube", glm::vec3(0.0f, 0.0f, 3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.6f, 0.6f, 0.6f), glm::vec3(0.0f, 0.0f, 1.0f), -1, false, true, true);
+        GameObject* y_arrow_body_scaling = new GameObject("y_arrow_body_scaling", "cylinder", glm::vec3(0.0f, 1.5f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -1, false, true, true);
+        GameObject* y_arrow_head_scaling = new GameObject("y_arrow_head_scaling", "cube", glm::vec3(0.0f, 3.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.6f, 0.6f, 0.6f), glm::vec3(0.0f, 1.0f, 0.0f), -1, false, true, true);
+        GameObject* x_arrow_body_scaling = new GameObject("x_arrow_body_scaling", "cylinder", glm::vec3(1.5f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.1f, 0.1f, 3.0f), glm::vec3(1.0f, 0.0f, 0.0f), -1, false, true, true);
+        GameObject* x_arrow_head_scaling = new GameObject("x_arrow_head_scaling", "cube", glm::vec3(3.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3(0.6f, 0.6f, 0.6f), glm::vec3(1.0f, 0.0f, 0.0f), -1, false, true, true);
+        GameObject* cube_center_scaling = new GameObject("cube_center_scaling", "cube", glm::vec3(0.0f, 0.0f, 0.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), -1, false, true, true);
 
         scaling_game_objects[z_arrow_body_scaling->name] = z_arrow_body_scaling;
         scaling_game_objects[x_arrow_body_scaling->name] = x_arrow_body_scaling;
@@ -100,7 +100,7 @@ public:
     void transform(const glm::vec2& transform_vector) {
         const float VELOCITY_TRANSLATION = 0.001f;
         const float VELOCITY_ROTATION = 0.008f;
-        const float VELOCITY_SCALING = 0.001f;
+        const float VELOCITY_SCALING = 0.0005f;
 
         Rendering* rendering = Rendering::get_instance();
         GameObject* game_object_transform3d = rendering->last_selected_object_transform3d;

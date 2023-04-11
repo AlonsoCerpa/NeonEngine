@@ -15,12 +15,12 @@
 
 #pragma once
 
-#include "model.h"
+#include "base_model.h"
 
 #include <vector>
 #include <glad/glad.h>
 
-class Sphere : public Model
+class Sphere : public BaseModel
 {
 public:
     // ctor/dtor

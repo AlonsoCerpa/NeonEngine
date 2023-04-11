@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model.h"
+#include "base_model.h"
 #include "shader.h"
 
 #include <vector>
@@ -8,7 +8,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-class DiskBorder : public Model {
+class DiskBorder : public BaseModel {
 public:
     unsigned int VAO;
     std::vector<float> vertices;
