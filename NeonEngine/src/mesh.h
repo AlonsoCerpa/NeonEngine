@@ -25,6 +25,7 @@ struct Texture {
     unsigned int id;
     std::string type;
     std::string path;
+    int num_channels;
 };
 
 class Mesh {
@@ -64,13 +65,13 @@ public:
             // retrieve texture number (the N in diffuse_textureN)
             std::string number;
             std::string name = textures[i].type;
-            if(name == "texture_diffuse")
+            if (name == "texture_diffuse")
                 number = std::to_string(diffuseNr++);
-            else if(name == "texture_specular")
+            else if (name == "texture_specular")
                 number = std::to_string(specularNr++); // transfer unsigned int to string
-            else if(name == "texture_normal")
+            else if (name == "texture_normal")
                 number = std::to_string(normalNr++); // transfer unsigned int to string
-            else if(name == "texture_height")
+            else if (name == "texture_height")
                 number = std::to_string(heightNr++); // transfer unsigned int to string
 
             // now set the sampler to the correct texture unit
@@ -143,7 +144,7 @@ private:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
         // set the vertex attribute pointers
-        // vertex Positions
+        // vertex positions
         glEnableVertexAttribArray(0);	
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
         // vertex normals

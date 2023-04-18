@@ -49,7 +49,7 @@ void Input::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void Input::process_viewport_input() {
     Camera* camera_viewport = rendering->camera_viewport;
-    float& deltaTime = neon_engine->deltaTime;
+    float& deltaTime = neon_engine->delta_time_seconds;
     bool& firstMouse = neon_engine->firstMouse;
     //ImVec2 current_mouse_pos = ImGui::GetMousePos();
     double current_mouse_pos_x, current_mouse_pos_y;

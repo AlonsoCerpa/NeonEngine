@@ -13,8 +13,9 @@ uniform mat4 model;
 uniform mat3 model_normals;
 uniform mat4 model_view_projection;
 
+#define MAX_NUMBER_BONES 200
+uniform mat4 bone_transforms[MAX_NUMBER_BONES];
 uniform int is_animated;
-uniform mat4 bone_transforms[200];
 
 void main() {
     mat4 BoneTransform = bone_transforms[aBoneIds[0]] * aBoneWeights[0];

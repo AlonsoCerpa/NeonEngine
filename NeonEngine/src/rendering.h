@@ -23,6 +23,7 @@ class DirectionalLight;
 class SpotLight;
 class Transform3D;
 class Quad;
+class Cubemap;
 
 unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource);
 unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data);
@@ -50,9 +51,12 @@ public:
     GameObject* check_mouse_over_transform3d();
 
     glm::mat4 view, projection;
-    glm::mat4 view_projection, view_projection_inv;
+    glm::mat4 view_projection;
+    //glm::mat4 view_projection_inv;
+    glm::mat4 view_skybox, view_projection_skybox;
     Camera* camera_viewport;
     Quad* screen_quad;
+    Cubemap* cubemap;
     float near_camera_viewport, far_camera_viewport;
     unsigned int framebuffer, textureColorbuffer, texture_id_colors, texture_selected_color_buffer;
     unsigned int texture_id_colors_transform3d, rboDepthStencil;
@@ -60,6 +64,8 @@ public:
     Shader* phong_shader;
     Shader* selection_shader;
     Shader* outline_shader;
+    Shader* skybox_shader;
+    std::vector<std::string> skyboxes_loaded;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object_transform3d;
     std::unordered_map<std::string, BaseModel*> loaded_models;

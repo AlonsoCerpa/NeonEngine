@@ -30,12 +30,13 @@ NeonEngine::NeonEngine() {
     glfw_minor_version = 3;
     glsl_version = "#version 330";
     window_title = "Neon Engine";
-    window_width = 1920;
-    window_height = 1080;
+    window_width = 2560;
+    window_height = 1440;
     clear_color = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
     
-    deltaTime = 0.0f;
-    lastFrame = 0.0f;
+    delta_time_seconds = 0.0f;
+    last_time_seconds = 0.0f;
+    frames_per_second = 0.0f;
     firstMouse = true;
     lastX = 0.0f;
     lastY = 0.0f;
@@ -134,9 +135,10 @@ int NeonEngine::run() {
     
     while (!glfwWindowShouldClose(window))
     {
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        float current_time_seconds = static_cast<float>(glfwGetTime());
+        delta_time_seconds = current_time_seconds - last_time_seconds;
+        last_time_seconds = current_time_seconds;
+        frames_per_second = 1.0f / delta_time_seconds;
 
         glfwPollEvents();
 

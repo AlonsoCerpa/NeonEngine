@@ -19,15 +19,38 @@
 #include <vector>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <filesystem>
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false);
+unsigned int TextureFromFile(const char* path, const std::string& directory, int& num_channels, bool gamma = false);
+unsigned int EmbeddedTextureFromFile(const aiTexture* texture, int& num_channels);
+
+struct ModelNode {
+    std::string name;
+    aiMatrix4x4 transformation;
+    std::vector<ModelNode*> children;
+
+    ~ModelNode() {
+        for (int i = 0; i < children.size(); i++) {
+            delete children[i];
+        }
+    }
+};
+
+struct NodeAnimation {
+    std::map<double, aiVector3D> map_time_to_position;
+    std::map<double, aiQuaternion> map_time_to_rotation;
+    std::map<double, aiVector3D> map_time_to_scaling;
+};
+
+struct Animation {
+    double ticks_per_second;
+    double duration;
+    std::unordered_map<std::string, NodeAnimation> umap_node_name_to_channels;
+};
 
 class Model : public BaseModel
 {
 public:
-    Assimp::Importer importer;
-    const aiScene* scene;
-
     // model data 
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<Mesh> meshes;
@@ -37,17 +60,24 @@ public:
     // Data for bones
     aiMatrix4x4 global_inverse_transform;
     std::unordered_map<std::string, int> umap_bone_name_to_id;
+    std::vector<Animation> animations;
+    ModelNode* root_node;
 
     // constructor, expects a filepath to a 3D model.
     Model(const std::string& name, std::string const& path, bool gamma = false, bool set_flip_vertically = true) : gammaCorrection(gamma)
     {
+        std::cout << "Loading model: " << name << std::endl;
         auto start_time = std::chrono::system_clock::now();
         stbi_set_flip_vertically_on_load(set_flip_vertically);
         this->name = name;
         loadModel(path);
         auto end_time = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed_seconds = end_time - start_time;
-        std::cout << "Model \"" << name << "\" loaded in " << elapsed_seconds.count() << " seconds" << std::endl;
+        std::cout << "Model loaded in " << elapsed_seconds.count() << " seconds." << std::endl << std::endl;
+    }
+
+    ~Model() {
+        delete root_node;
     }
 
     // draws the model, and thus all its meshes
@@ -58,37 +88,32 @@ public:
         }
     }
 
-    aiNodeAnim* find_node_animation(const aiAnimation* animation, const std::string& node_name) {
-        for (int i = 0; i < animation->mNumChannels; i++) {
-            aiNodeAnim* node_animation = animation->mChannels[i];
-
-            if (std::string(node_animation->mNodeName.data) == node_name) {
-                return node_animation;
-            }
+    NodeAnimation* find_node_animation(Animation& animation, const std::string& node_name) {
+        if (animation.umap_node_name_to_channels.find(node_name) != animation.umap_node_name_to_channels.end()) {
+            return &(animation.umap_node_name_to_channels[node_name]);
         }
         return nullptr;
     }
 
-    void update_bones_recursively(float animation_time_in_ticks, const aiAnimation* animation, const aiNode* node, const aiMatrix4x4& parent_transform) {
-        std::string node_name(node->mName.data);
-        aiMatrix4x4 node_transformation(node->mTransformation);
-        const aiNodeAnim* node_animation = find_node_animation(animation, node_name);
+    void update_bones_recursively(float animation_time_in_ticks, Animation& animation, ModelNode* node, const aiMatrix4x4& parent_transform) {
+        aiMatrix4x4 node_transformation(node->transformation);
+        NodeAnimation* node_animation = find_node_animation(animation, node->name);
 
         if (node_animation) {
             // Interpolate scaling and generate scaling transformation matrix
             aiVector3D scaling;
-            calculate_interpolated_transformation(scaling, animation_time_in_ticks, node_animation, node_animation->mNumScalingKeys, node_animation->mScalingKeys);
+            calculate_interpolated_transformation(scaling, animation_time_in_ticks, node_animation->map_time_to_scaling);
             aiMatrix4x4 scaling_matrix;
             scaling_matrix = aiMatrix4x4::Scaling(aiVector3D(scaling.x, scaling.y, scaling.z), scaling_matrix);
 
             // Interpolate rotation and generate rotation transformation matrix
             aiQuaternion rotation_quaternion;
-            calculate_interpolated_transformation(rotation_quaternion, animation_time_in_ticks, node_animation);
+            calculate_interpolated_transformation(rotation_quaternion, animation_time_in_ticks, node_animation->map_time_to_rotation);
             aiMatrix4x4 rotation_matrix(rotation_quaternion.GetMatrix());
 
             // Interpolate translation and generate translation transformation matrix
             aiVector3D translation;
-            calculate_interpolated_transformation(translation, animation_time_in_ticks, node_animation, node_animation->mNumPositionKeys, node_animation->mPositionKeys);
+            calculate_interpolated_transformation(translation, animation_time_in_ticks, node_animation->map_time_to_position);
             aiMatrix4x4 translation_matrix;
             translation_matrix = aiMatrix4x4::Translation(aiVector3D(translation.x, translation.y, translation.z), translation_matrix);
 
@@ -98,93 +123,90 @@ public:
 
         aiMatrix4x4 global_transformation = parent_transform * node_transformation;
 
-        if (umap_bone_name_to_id.find(node_name) != umap_bone_name_to_id.end()) {
-            int bone_id = umap_bone_name_to_id[node_name];
+        if (umap_bone_name_to_id.find(node->name) != umap_bone_name_to_id.end()) {
+            int bone_id = umap_bone_name_to_id[node->name];
             bones[bone_id].final_transformation = global_inverse_transform * global_transformation * bones[bone_id].offset_matrix;
         }
 
-        for (int i = 0; i < node->mNumChildren; i++) {
-            update_bones_recursively(animation_time_in_ticks, animation, node->mChildren[i], global_transformation);
+        for (int i = 0; i < node->children.size(); i++) {
+            update_bones_recursively(animation_time_in_ticks, animation, node->children[i], global_transformation);
         }
     }
 
     void update_bone_transformations(float animation_time_in_seconds, int animation_id) {
         aiMatrix4x4 identity;
-        assert(animation_id < scene->mNumAnimations);
-        float ticks_per_second = (float)(scene->mAnimations[animation_id]->mTicksPerSecond != 0 ? scene->mAnimations[animation_id]->mTicksPerSecond : 25.0f);
+        assert(animation_id < animations.size());
+        float ticks_per_second = (float)(animations[animation_id].ticks_per_second != 0 ? animations[animation_id].ticks_per_second : 25.0f);
         float animation_time_in_ticks = animation_time_in_seconds * ticks_per_second;
-        animation_time_in_ticks = fmod(animation_time_in_ticks, (float)scene->mAnimations[animation_id]->mDuration);
+        animation_time_in_ticks = fmod(animation_time_in_ticks, (float)animations[animation_id].duration);
 
-        update_bones_recursively(animation_time_in_ticks, scene->mAnimations[animation_id], scene->mRootNode, identity);
+        update_bones_recursively(animation_time_in_ticks, animations[animation_id], root_node, identity);
     }
 
     // For translations and scalings
-    void calculate_interpolated_transformation(aiVector3D& transformation, float animation_time_in_ticks, const aiNodeAnim* node_animation,
-                                               unsigned int num_keys, aiVectorKey* keys) {
-        // we need at least two values to interpolate...
-        if (num_keys == 1) {
-            transformation = keys[0].mValue;
+    void calculate_interpolated_transformation(aiVector3D& transformation, float animation_time_in_ticks, std::map<double, aiVector3D>& map_time_to_transform) {
+        // When there is only one key or when we the current animation time is less than first key's time
+        if (map_time_to_transform.size() == 1 || animation_time_in_ticks < map_time_to_transform.begin()->first) {
+            transformation = map_time_to_transform.begin()->second;
+            return;
+        }
+        // When the current animation time is greater than the last key's time
+        else if (animation_time_in_ticks > map_time_to_transform.rbegin()->first) {
+            transformation = map_time_to_transform.rbegin()->second;
             return;
         }
 
-        unsigned int transformation_index = find_transformation(animation_time_in_ticks, node_animation, num_keys, keys);
-        unsigned int next_transformation_index = transformation_index + 1;
-        assert(next_transformation_index < num_keys);
-        float t1 = (float)keys[transformation_index].mTime;
-        float t2 = (float)keys[next_transformation_index].mTime;
+        // Find 2 closest keys to the current animation time in O(log(n))
+        auto it_next_transformation = map_time_to_transform.upper_bound(animation_time_in_ticks);
+        if (it_next_transformation == map_time_to_transform.end()) {
+            it_next_transformation--;
+        }
+        auto it_transformation = it_next_transformation;
+        it_transformation--;
+
+        // Interpolate the 2 closest transformations found
+        float t1 = (float)it_transformation->first;
+        float t2 = (float)it_next_transformation->first;
         float delta_time = t2 - t1;
         float factor = (animation_time_in_ticks - t1) / delta_time;
         assert(factor >= 0.0f && factor <= 1.0f);
-        const aiVector3D& start = keys[transformation_index].mValue;
-        const aiVector3D& end = keys[next_transformation_index].mValue;
+        const aiVector3D& start = it_transformation->second;
+        const aiVector3D& end = it_next_transformation->second;
         aiVector3D delta = end - start;
         transformation = start + factor * delta;
     }
 
-    // For translations and scalings
-    unsigned int find_transformation(float animation_time_in_ticks, const aiNodeAnim* node_animation, unsigned int num_keys, aiVectorKey* keys) {
-        for (int i = 0; i < num_keys - 1; i++) {
-            float t = (float)keys[i + 1].mTime;
-            if (animation_time_in_ticks < t) {
-                return i;
-            }
-        }
-        return 0;
-    }
-
     // For rotations
-    void calculate_interpolated_transformation(aiQuaternion& transformation, float animation_time_in_ticks, const aiNodeAnim* node_animation) {
-        // we need at least two values to interpolate...
-        if (node_animation->mNumRotationKeys == 1) {
-            transformation = node_animation->mRotationKeys[0].mValue;
+    void calculate_interpolated_transformation(aiQuaternion& transformation, float animation_time_in_ticks, std::map<double, aiQuaternion>& map_time_to_transform) {
+        // When there is only one key or when we the current animation time is less than first key's time
+        if (map_time_to_transform.size() == 1 || animation_time_in_ticks < map_time_to_transform.begin()->first) {
+            transformation = map_time_to_transform.begin()->second;
+            return;
+        }
+        // When the current animation time is greater than the last key's time
+        else if (animation_time_in_ticks > map_time_to_transform.rbegin()->first) {
+            transformation = map_time_to_transform.rbegin()->second;
             return;
         }
 
-        unsigned int rotation_index = find_transformation(animation_time_in_ticks, node_animation);
-        unsigned int next_rotation_index = rotation_index + 1;
-        assert(next_rotation_index < node_animation->mNumRotationKeys);
-        float t1 = (float)node_animation->mRotationKeys[rotation_index].mTime;
-        float t2 = (float)node_animation->mRotationKeys[next_rotation_index].mTime;
+        // Find 2 closest keys to the current animation time in O(log(n))
+        auto it_next_transformation = map_time_to_transform.upper_bound(animation_time_in_ticks);
+        if (it_next_transformation == map_time_to_transform.end()) {
+            it_next_transformation--;
+        }
+        auto it_transformation = it_next_transformation;
+        it_transformation--;
+
+        // Interpolate the 2 closest transformations found
+        float t1 = (float)it_transformation->first;
+        float t2 = (float)it_next_transformation->first;
         float delta_time = t2 - t1;
         float factor = (animation_time_in_ticks - t1) / delta_time;
         assert(factor >= 0.0f && factor <= 1.0f);
-        const aiQuaternion& start_rotation_q = node_animation->mRotationKeys[rotation_index].mValue;
-        const aiQuaternion& end_rotation_q = node_animation->mRotationKeys[next_rotation_index].mValue;
+        const aiQuaternion& start_rotation_q = it_transformation->second;
+        const aiQuaternion& end_rotation_q = it_next_transformation->second;
         aiQuaternion::Interpolate(transformation, start_rotation_q, end_rotation_q, factor);
         transformation.Normalize();
-    }
-
-    // For rotations
-    unsigned int find_transformation(float animation_time_in_ticks, const aiNodeAnim* node_animation) {
-        int num_keys = node_animation->mNumRotationKeys;
-        aiQuatKey* keys = node_animation->mRotationKeys;
-        for (int i = 0; i < num_keys - 1; i++) {
-            float t = (float)keys[i + 1].mTime;
-            if (animation_time_in_ticks < t) {
-                return i;
-            }
-        }
-        return 0;
     }
 
     bool intersected_ray(const glm::vec3& orig, const glm::vec3& dir, float& t) {
@@ -198,14 +220,15 @@ public:
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(std::string const& path)
-    {
+    void loadModel(std::string const& path) {
+        Assimp::Importer importer;
+
         // read file via ASSIMP
-        this->scene = this->importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
+        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
         // check for errors
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
-            std::cout << "ERROR::ASSIMP:: " << this->importer.GetErrorString() << std::endl;
+            std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
             return;
         }
 
@@ -216,16 +239,43 @@ private:
         this->global_inverse_transform = scene->mRootNode->mTransformation;
         this->global_inverse_transform = this->global_inverse_transform.Inverse();
 
-        // We process each node, starting at the root node, and recursing downwards
+        // We process each node, starting at the root node, and recurse downwards
         // Inside the processing of each node, we process all of the meshes of the current node
         // Inside the processing of each mesh, we process all the vertices of the mesh, the material of the mesh
         // and the bone data related to this mesh.
-        processNode(scene->mRootNode, scene);
+        root_node = new ModelNode();
+        processNode(scene->mRootNode, scene, root_node);
+
+        // Process animations and store them in our own data structure
+        for (int i = 0; i < scene->mNumAnimations; i++) {
+            aiAnimation* assimp_animation = scene->mAnimations[i];
+            Animation animation;
+            animation.ticks_per_second = assimp_animation->mTicksPerSecond;
+            animation.duration = assimp_animation->mDuration;
+            for (int j = 0; j < assimp_animation->mNumChannels; j++) {
+                aiNodeAnim* node_anim = assimp_animation->mChannels[j];
+                NodeAnimation node_animation;
+                for (int k = 0; k < node_anim->mNumPositionKeys; k++) {
+                    node_animation.map_time_to_position[node_anim->mPositionKeys[k].mTime] = node_anim->mPositionKeys[k].mValue;
+                }
+                for (int k = 0; k < node_anim->mNumRotationKeys; k++) {
+                    node_animation.map_time_to_rotation[node_anim->mRotationKeys[k].mTime] = node_anim->mRotationKeys[k].mValue;
+                }
+                for (int k = 0; k < node_anim->mNumScalingKeys; k++) {
+                    node_animation.map_time_to_scaling[node_anim->mScalingKeys[k].mTime] = node_anim->mScalingKeys[k].mValue;
+                }
+                std::string node_name = std::string(node_anim->mNodeName.data);
+                animation.umap_node_name_to_channels[node_name] = node_animation;
+            }
+            animations.push_back(animation);
+        }
     }
 
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-    void processNode(aiNode* node, const aiScene* scene)
+    void processNode(aiNode* node, const aiScene* scene, ModelNode* model_node)
     {
+        model_node->name = std::string(node->mName.data);
+        model_node->transformation = node->mTransformation;
         // process each mesh located at the current node
         for (unsigned int i = 0; i < node->mNumMeshes; i++)
         {
@@ -237,7 +287,9 @@ private:
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
         for (unsigned int i = 0; i < node->mNumChildren; i++)
         {
-            processNode(node->mChildren[i], scene);
+            ModelNode* child = new ModelNode();
+            processNode(node->mChildren[i], scene, child);
+            model_node->children.push_back(child);
         }
     }
 
@@ -310,16 +362,16 @@ private:
         // height: texture_heightN
 
         // 1. diffuse maps
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
         // 2. specular maps
-        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", scene);
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         // 3. normal maps
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", scene);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 4. height maps
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", scene);
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
 
@@ -370,7 +422,7 @@ private:
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
     // the required info is returned as a Texture struct.
-    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
+    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene)
     {
         std::vector<Texture> textures;
         for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -390,37 +442,89 @@ private:
             }
             if (!skip)
             {   // if texture hasn't been loaded already, load it
+                const aiTexture* ai_texture = scene->GetEmbeddedTexture(str.C_Str());
                 Texture texture;
-                texture.id = TextureFromFile(str.C_Str(), this->directory);
+                if (ai_texture) {
+                    texture.id = EmbeddedTextureFromFile(ai_texture, texture.num_channels);
+                }
+                else {
+                    texture.id = TextureFromFile(str.C_Str(), this->directory, texture.num_channels);
+                }
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
                 textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
+                std::cout << "Texture loaded at path: " << texture.path << ", of type: " << texture.type << ", with " << texture.num_channels << " channels." << std::endl;
             }
         }
         return textures;
     }
 };
 
+unsigned int EmbeddedTextureFromFile(const aiTexture* texture, int& num_channels)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
+    int length_data;
+    if (texture->mHeight == 0) {
+        length_data = texture->mWidth;
+    }
+    else {
+        length_data = texture->mWidth * texture->mHeight;
+    }
+    int width, height;
+    unsigned char* data = stbi_load_from_memory((unsigned char*)(texture->pcData), length_data, &width, &height, &num_channels, 0);
+    if (data) {
+        GLenum format = GL_RGB;
+        if (num_channels == 1)
+            format = GL_RED;
+        else if (num_channels == 3)
+            format = GL_RGB;
+        else if (num_channels == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else {
+        std::cout << "Embedded texture failed to load" << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+unsigned int TextureFromFile(const char* path, const std::string& directory, int& num_channels, bool gamma)
 {
     std::string filename = std::string(path);
-    filename = directory + '/' + filename;
+    std::filesystem::path filename_path(filename);
+
+    if (filename_path.is_relative()) {
+        filename = directory + '/' + filename;
+    }
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
-    int width, height, nrComponents;
-    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+    int width, height;
+    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &num_channels, 0);
     if (data)
     {
         GLenum format = GL_RGB;
-        if (nrComponents == 1)
+        if (num_channels == 1)
             format = GL_RED;
-        else if (nrComponents == 3)
+        else if (num_channels == 3)
             format = GL_RGB;
-        else if (nrComponents == 4)
+        else if (num_channels == 4)
             format = GL_RGBA;
 
         glBindTexture(GL_TEXTURE_2D, textureID);

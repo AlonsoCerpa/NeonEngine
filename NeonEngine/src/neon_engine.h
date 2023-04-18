@@ -27,8 +27,10 @@ public:
     int window_height;
     const char* window_title;
 
-    float deltaTime = 0.0f;
-    float lastFrame = 0.0f;
+    float delta_time_seconds;
+    float last_time_seconds;
+    float frames_per_second;
+
     bool firstMouse;
     float lastX, lastY;
 

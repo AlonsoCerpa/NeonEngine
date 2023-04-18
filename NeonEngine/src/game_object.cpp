@@ -10,6 +10,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <chrono>
 
+#define MAX_NUMBER_BONES 200
+
 //////////////////////////////// GAME_OBJECT //////////////////////////////////////
 
 ColorGenerator* GameObject::color_generator = new ColorGenerator(100000);
@@ -59,6 +61,7 @@ void GameObject::draw(Shader* shader, bool disable_depth_test) {
             std::chrono::duration<float> elapsed_seconds = current_time - rendering->time_before_rendering;
             rendering->loaded_models[model_name]->update_bone_transformations(elapsed_seconds.count(), this->animation_id);
             shader->setInt("is_animated", true);
+            assert(rendering->loaded_models[model_name]->bones.size() <= MAX_NUMBER_BONES);
             for (int i = 0; i < rendering->loaded_models[model_name]->bones.size(); i++) {
                 glm::mat4 glm_matrix;
                 std::memcpy(glm::value_ptr(glm_matrix), &(rendering->loaded_models[model_name]->bones[i].final_transformation), sizeof(aiMatrix4x4));

@@ -32,6 +32,8 @@ UserInterface::UserInterface() {
     texture_viewport_reduce_width_px = 10;
     texture_viewport_reduce_height_px = 30;
     first_time_viewport_fbo = true;
+    passed_time_seconds = 0.0f;
+    frames_per_second_ui = 0.0f;
 }
 
 UserInterface::~UserInterface() {
@@ -208,6 +210,12 @@ void UserInterface::render_ui() {
     }
 
     ImGui::Begin("Viewport");
+    passed_time_seconds += neon_engine->delta_time_seconds;
+    if (passed_time_seconds >= 1.0f) {
+        frames_per_second_ui = neon_engine->frames_per_second;
+        passed_time_seconds = 0.0f;
+    }
+    ImGui::Text(std::string("FPS: " + std::to_string(frames_per_second_ui)).c_str());
     int new_window_viewport_width = ImGui::GetWindowWidth();
     int new_window_viewport_height = ImGui::GetWindowHeight();
     if (new_window_viewport_width != window_viewport_width || new_window_viewport_height != window_viewport_height) {

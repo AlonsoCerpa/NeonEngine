@@ -34,6 +34,8 @@ private:
 
     void set_ui_style();
 
+    float passed_time_seconds;
+    float frames_per_second_ui;
     NeonEngine* neon_engine;
     Input* input;
     Rendering* rendering;

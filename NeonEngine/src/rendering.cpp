@@ -13,6 +13,7 @@
 #include "cube.h"
 #include "sphere.h"
 #include "disk_border.h"
+#include "cubemap.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -32,11 +33,12 @@ Rendering::Rendering() {
     outline_shader = nullptr;
     camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
     near_camera_viewport = 0.1f;
-    far_camera_viewport = 100.0f;
+    far_camera_viewport = 500.0f;
     last_selected_object = nullptr;
     last_selected_object_transform3d = nullptr;
     outline_color = glm::vec3(255.0f/255.0f, 195.0f/255.0f, 7.0f/255.0f);
     screen_quad = nullptr;
+    cubemap = nullptr;
 }
 
 Rendering::~Rendering() {
@@ -80,40 +82,71 @@ void Rendering::set_viewport_shaders() {
     phong_shader = new Shader("shaders/vertices_3d_model.vert", "shaders/phong_lighting.frag");
     selection_shader = new Shader("shaders/vertices_3d_model.vert", "shaders/paint_selected.frag");
     outline_shader = new Shader("shaders/vertices_quad.vert", "shaders/edge_outlining.frag");
+    skybox_shader = new Shader("shaders/skybox.vert", "shaders/skybox.frag");
 }
 
 void Rendering::set_viewport_models() {
+    // Cubemap
+    std::vector<std::string> skybox_textures_ocean_with_sky = {
+        "skyboxes/ocean_with_sky/right.jpg",
+        "skyboxes/ocean_with_sky/left.jpg",
+        "skyboxes/ocean_with_sky/top.jpg",
+        "skyboxes/ocean_with_sky/bottom.jpg",
+        "skyboxes/ocean_with_sky/front.jpg",
+        "skyboxes/ocean_with_sky/back.jpg" };
+    std::vector<std::string> skybox_textures_nebula = {
+        "skyboxes/nebula/right.png",
+        "skyboxes/nebula/left.png",
+        "skyboxes/nebula/top.png",
+        "skyboxes/nebula/bottom.png",
+        "skyboxes/nebula/front.png",
+        "skyboxes/nebula/back.png" };
+    std::vector<std::string> skybox_textures_red_space = {
+        "skyboxes/red_space/right.png",
+        "skyboxes/red_space/left.png",
+        "skyboxes/red_space/top.png",
+        "skyboxes/red_space/bottom.png",
+        "skyboxes/red_space/front.png",
+        "skyboxes/red_space/back.png" };
+
+    skyboxes_loaded.push_back("ocean_with_sky");
+    skyboxes_loaded.push_back("nebula");
+    skyboxes_loaded.push_back("red_space");
+
+    cubemap = new Cubemap(skyboxes_loaded[0], skybox_textures_ocean_with_sky);
+    cubemap->add_cubemap_texture(skyboxes_loaded[1], skybox_textures_nebula);
+    cubemap->add_cubemap_texture(skyboxes_loaded[2], skybox_textures_red_space);
+
     // Screen Quad
     screen_quad = new Quad();
 
-    // Backpack
-    //BaseModel* backpack = new Model("backpack", "models/backpack/backpack.obj");
-    //loaded_models[backpack->name] = backpack;
+    // Outer Space Environment
+    BaseModel* outer_space_environment = new Model("outer_space_environment", "models/outer_space_environment/outer_space_environment.gltf", false, false);
+    loaded_models[outer_space_environment->name] = outer_space_environment;
 
-    // Flying car
-    //BaseModel* flying_car = new Model("flying_car", "models/blender_car/car.obj", false, false);
-    //loaded_models[flying_car->name] = flying_car;
+    // Space Station 1
+    BaseModel* space_station1 = new Model("space_station1", "models/space_station1/space_station1.gltf", false, false);
+    loaded_models[space_station1->name] = space_station1;
 
-    // Demon
-    BaseModel* demon = new Model("demon", "models/demon/demon.obj", false, false);
-    loaded_models[demon->name] = demon;
-
-    // Seademon
-    BaseModel* seademon = new Model("seademon", "models/seademon/seademon.obj", false, false);
-    loaded_models[seademon->name] = seademon;
-
-    // Darius
-    BaseModel* darius = new Model("darius", "models/darius/darius.obj", false, false);
-    loaded_models[darius->name] = darius;
-
-    // Deathwing
-    //BaseModel* deathwing = new Model("deathwing", "models/deathwing/deathwing.obj", false, false);
-    //loaded_models[deathwing->name] = deathwing;
+    // Space Station 2
+    BaseModel* space_station2 = new Model("space_station2", "models/space_station2/space_station2.gltf", false, false);
+    loaded_models[space_station2->name] = space_station2;
 
     // Vampire
-    BaseModel* vampire = new Model("vampire", "models/vampire/vampire.dae", false, false);
+    BaseModel* vampire = new Model("vampire", "models/vampire/vampire.gltf", false, false);
     loaded_models[vampire->name] = vampire;
 
+    // Knight
+    BaseModel* knight = new Model("knight", "models/knight/knight.gltf", false, false);
+    loaded_models[knight->name] = knight;
+
+    // Mutant
+    BaseModel* mutant = new Model("mutant", "models/mutant/mutant.gltf", false, false);
+    loaded_models[mutant->name] = mutant;
+
+    // Android
+    BaseModel* android = new Model("android", "models/android/android.gltf", false, false);
+    loaded_models[android->name] = android;
 
     // Cylinder
     BaseModel* cylinder = new Cylinder("cylinder", 1.0f, 1.0f, 1.0f, 36, 1, true, 3);
@@ -141,41 +174,35 @@ void Rendering::set_viewport_models() {
 }
 
 void Rendering::initialize_game_objects() {
-    //GameObject* backpack1 = new GameObject("backpack1", "backpack", glm::vec3(0.0f, 0.0f, -5.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(102.0f/255.0f, 0.0f/255.0f, 204.0f/255.0f), -1, false, false, true);
-    //game_objects[backpack1->name] = backpack1;
-    //id_color_to_game_object[backpack1->id_color] = backpack1;
+    GameObject* outer_space_environment1 = new GameObject("outer_space_environment1", "outer_space_environment", glm::vec3(0.0f, -15.0f, 0.0f), glm::angleAxis(glm::radians(-90.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    game_objects[outer_space_environment1->name] = outer_space_environment1;
+    id_color_to_game_object[outer_space_environment1->id_color] = outer_space_environment1;
 
-    //GameObject* backpack2 = new GameObject("backpack2", "backpack", glm::vec3(3.0f, 2.0f, -6.0f), glm::angleAxis(glm::radians(60.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //game_objects[backpack2->name] = backpack2;
-    //id_color_to_game_object[backpack2->id_color] = backpack2;
+    GameObject* space_station1_1 = new GameObject("space_station1_1", "space_station1", glm::vec3(-7.0f, 20.0f, -2.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    game_objects[space_station1_1->name] = space_station1_1;
+    id_color_to_game_object[space_station1_1->id_color] = space_station1_1;
 
-    //GameObject* backpack3 = new GameObject("backpack3", "backpack", glm::vec3(-3.0f, 2.0f, -6.0f), glm::angleAxis(glm::radians(60.0f), glm::normalize(glm::vec3(1.0f, 0.3f, 0.8f))), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //game_objects[backpack3->name] = backpack3;
-    //id_color_to_game_object[backpack3->id_color] = backpack3;
+    GameObject* space_station2_1 = new GameObject("space_station2_1", "space_station2", glm::vec3(20.0f, 20.0f, -15.0f), glm::angleAxis(glm::radians(60.0f), glm::normalize(glm::vec3(1.0f, 0.3f, 0.8f))), glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    game_objects[space_station2_1->name] = space_station2_1;
+    id_color_to_game_object[space_station2_1->id_color] = space_station2_1;
 
-    //GameObject* flying_car1 = new GameObject("flying_car1", "flying_car", glm::vec3(-0.5f, 0.0f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //game_objects[flying_car1->name] = flying_car1;
-    //id_color_to_game_object[flying_car1->id_color] = flying_car1;
 
-    GameObject* demon1 = new GameObject("demon1", "demon", glm::vec3(-2.5f, -0.5f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.0f, 1.0f, 0.0f));
-    game_objects[demon1->name] = demon1;
-    id_color_to_game_object[demon1->id_color] = demon1;
 
-    GameObject* seademon1 = new GameObject("seademon1", "seademon", glm::vec3(1.5f, -0.5f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
-    game_objects[seademon1->name] = seademon1;
-    id_color_to_game_object[seademon1->id_color] = seademon1;
-
-    GameObject* darius1 = new GameObject("darius1", "darius", glm::vec3(3.5f, -3.5f, -4.5f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
-    game_objects[darius1->name] = darius1;
-    id_color_to_game_object[darius1->id_color] = darius1;
-
-    //GameObject* deathwing1 = new GameObject("deathwing1", "deathwing", glm::vec3(0.0f, 5.5f, -6.5f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //game_objects[deathwing1->name] = deathwing1;
-    //id_color_to_game_object[deathwing1->id_color] = deathwing1;
-
-    GameObject* vampire1 = new GameObject("vampire1", "vampire", glm::vec3(-6.0f, 0.0f, -2.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.03f, 0.03f, 0.03f), glm::vec3(0.0f, 1.0f, 0.0f), 0);
+    GameObject* vampire1 = new GameObject("vampire1", "vampire", glm::vec3(-7.0f, 0.0f, -2.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.03f, 0.03f, 0.03f), glm::vec3(0.0f, 1.0f, 0.0f), 0);
     game_objects[vampire1->name] = vampire1;
     id_color_to_game_object[vampire1->id_color] = vampire1;
+
+    GameObject* knight1 = new GameObject("knight1", "knight", glm::vec3(-2.0f, 0.0f, -2.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.03f, 0.03f, 0.03f), glm::vec3(0.0f, 1.0f, 0.0f), 10);
+    game_objects[knight1->name] = knight1;
+    id_color_to_game_object[knight1->id_color] = knight1;
+
+    GameObject* mutant1 = new GameObject("mutant1", "mutant", glm::vec3(6.0f, 0.0f, -2.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.03f, 0.03f, 0.03f), glm::vec3(0.0f, 1.0f, 0.0f), 12);
+    game_objects[mutant1->name] = mutant1;
+    id_color_to_game_object[mutant1->id_color] = mutant1;
+
+    GameObject* android1 = new GameObject("android1", "android", glm::vec3(2.0f, 0.0f, -2.0f), glm::angleAxis(glm::radians(0.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f))), glm::vec3(0.03f, 0.03f, 0.03f), glm::vec3(0.0f, 1.0f, 0.0f), 0);
+    game_objects[android1->name] = android1;
+    id_color_to_game_object[android1->id_color] = android1;
 
 
 
@@ -206,7 +233,7 @@ void Rendering::initialize_game_objects() {
     game_objects[point_light1->name] = point_light1;
     point_lights[point_light1->name] = (PointLight*)point_light1;
     id_color_to_game_object[point_light1->id_color] = point_light1;
-
+    
     GameObject* directional_light1 = new DirectionalLight("directional_light1", "sphere", glm::vec3(-5.0f, 5.0f, -3.0f), glm::angleAxis(glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), -1, false, false, true,
         glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.7f, 0.7f, 0.7f), glm::vec3(0.9f, 0.9f, 0.9f), glm::vec3(3.0f, -4.0f, -3.0f));
     game_objects[directional_light1->name] = directional_light1;
@@ -287,30 +314,41 @@ void Rendering::render_viewport() {
         phong_shader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].outer_cut_off", it->second->outer_cut_off);
     }
 
+    // Render the game objects with Phong shading and also render the unique Color IDs of each game object
+    // (later for the selection technique: Color Picking)
     phong_shader->setInt("is_transform3d", 0);
     for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
         GameObject* game_object = it->second;
         game_object->draw(phong_shader, false);
     }
 
+    // Render only the last selected object (if it exists) to later outline the shape of this object
     unsigned int attachments2[1] = { GL_COLOR_ATTACHMENT3 };
     glDrawBuffers(1, attachments2);
     selection_shader->use();
-    for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
-        GameObject* game_object = it->second;
-        game_object->draw(selection_shader, true);
+    if (last_selected_object != nullptr) {
+        last_selected_object->draw(selection_shader, true);
     }
 
+    // Draw skybox    
     unsigned int attachments3[1] = { GL_COLOR_ATTACHMENT0 }; // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
     glDrawBuffers(1, attachments3);
+    view_skybox = glm::mat4(glm::mat3(view)); // remove translation from the view matrix so it doesn't affect the skybox
+    view_projection_skybox = projection * view_skybox;
+    skybox_shader->use();
+    skybox_shader->setMat4("view_projection", view_projection_skybox);
+    cubemap->draw(skybox_shader, skyboxes_loaded[2]);
+
+    // Draw border outlining the selected object (if it exists one)
     outline_shader->use();
     outline_shader->setVec2("pixel_size", glm::vec2(1.0f / user_interface->texture_viewport_width, 1.0f / user_interface->texture_viewport_height));
     outline_shader->setVec3("outline_color", outline_color);
     screen_quad->draw(outline_shader, texture_selected_color_buffer, true);
 
+    // Clear the depth buffer so the Transform3D is drawn over everything
+    glClear(GL_DEPTH_BUFFER_BIT);
 
-    glClear(GL_DEPTH_BUFFER_BIT); // Clear the depth buffer so it doesn't affect the Transform3D draw call
-
+    // Draw 3D transforms if there is a selected object
     glDrawBuffers(3, attachments1);
     phong_shader->use();
     phong_shader->setInt("is_transform3d", 1);
@@ -319,9 +357,11 @@ void Rendering::render_viewport() {
         transform3d->draw(phong_shader);
     }
 
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+// Check mouse over viewport's models using Color Picking technique
 GameObject* Rendering::check_mouse_over_models() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
@@ -351,6 +391,7 @@ GameObject* Rendering::check_mouse_over_models() {
     }
 }
 
+// Check mouse over viewport's transform 3Ds models using Color Picking technique
 GameObject* Rendering::check_mouse_over_transform3d() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
@@ -380,6 +421,8 @@ GameObject* Rendering::check_mouse_over_transform3d() {
     }
 }
 
+// Check mouse over viewport's models using Ray Casting technique
+/*
 std::string Rendering::check_mouse_over_models2() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
@@ -420,12 +463,13 @@ std::string Rendering::check_mouse_over_models2() {
         }
     }
     return "";
-}
+}*/
 
 void Rendering::clean() {
     delete phong_shader;
     delete selection_shader;
     delete outline_shader;
+    delete skybox_shader;
     for (auto it = loaded_models.begin(); it != loaded_models.end(); it++) {
         delete it->second;
     }
@@ -435,6 +479,7 @@ void Rendering::clean() {
     delete transform3d;
     delete camera_viewport;
     delete screen_quad;
+    delete cubemap;
     GameObject::clean();
 }
 

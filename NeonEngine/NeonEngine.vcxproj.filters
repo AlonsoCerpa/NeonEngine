@@ -107,6 +107,9 @@
     <ClInclude Include="src\disk_border.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\cubemap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\phong_lighting.frag">
@@ -122,6 +125,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\paint_selected.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
