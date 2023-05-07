@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\game_object.cpp" />
     <ClCompile Include="src\cylinder.cpp" />
     <ClCompile Include="src\geometry.cpp" />
@@ -145,6 +146,8 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\logger.h" />
+    <ClInclude Include="src\pbr.h" />
     <ClInclude Include="src\cubemap.h" />
     <ClInclude Include="src\disk_border.h" />
     <ClInclude Include="src\cube.h" />
@@ -167,6 +170,13 @@
     <ClInclude Include="src\transform3d.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\brdf.frag" />
+    <None Include="shaders\brdf.vert" />
+    <None Include="shaders\prefilter.frag" />
+    <None Include="shaders\irradiance_convolution.frag" />
+    <None Include="shaders\equirectangular_to_cubemap.frag" />
+    <None Include="shaders\cubemap.vert" />
+    <None Include="shaders\PBR.frag" />
     <None Include="shaders\paint_selected.frag" />
     <None Include="shaders\edge_outlining.frag" />
     <None Include="shaders\phong_lighting.frag" />

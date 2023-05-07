@@ -3,6 +3,7 @@
 #include <mutex>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,10 +25,9 @@ class SpotLight;
 class Transform3D;
 class Quad;
 class Cubemap;
-
-unsigned int compile_shaders(const char* vertexShaderSource, const char* fragmentShaderSource);
-unsigned int create_and_set_vao(float* vertex_data, int size_vertex_data);
-void create_and_set_framebuffer(unsigned int* framebuffer, unsigned int* textureColorbuffer, unsigned int* rboDepthStencil, int width, int height);
+class Model;
+class Texture;
+class Material;
 
 class Rendering {
 public:
@@ -38,17 +38,23 @@ public:
     void operator=(const Rendering&) = delete;
 
     void set_opengl_state();
-    void render_viewport();
     void set_viewport_shaders();
-    void set_viewport_models();
+    void add_model_to_loaded_data(Model* model);
+    void set_viewport_data();
     void initialize_game_objects();
+    void set_pbr_shader();
     void set_time_before_rendering_loop();
+    void render_viewport();
     void create_and_set_viewport_framebuffer();
     void clean();
     void clean_viewport_framebuffer();
     GameObject* check_mouse_over_models();
-    std::string check_mouse_over_models2();
+    //std::string check_mouse_over_models2();
     GameObject* check_mouse_over_transform3d();
+
+    void print_names_loaded_models();
+    void print_names_loaded_materials();
+    void print_names_loaded_textures();
 
     glm::mat4 view, projection;
     glm::mat4 view_projection;
@@ -58,21 +64,29 @@ public:
     Quad* screen_quad;
     Cubemap* cubemap;
     float near_camera_viewport, far_camera_viewport;
+    float exposure;
     unsigned int framebuffer, textureColorbuffer, texture_id_colors, texture_selected_color_buffer;
     unsigned int texture_id_colors_transform3d, rboDepthStencil;
+    unsigned int envCubemap, irradianceMap, prefilterMap, brdfLUTTexture;
     std::chrono::time_point<std::chrono::system_clock> time_before_rendering;
     Shader* phong_shader;
+    Shader* pbr_shader;
     Shader* selection_shader;
     Shader* outline_shader;
     Shader* skybox_shader;
-    std::vector<std::string> skyboxes_loaded;
+    Shader* equirectangularToCubemapShader;
+    Shader* irradianceShader;
+    Shader* prefilterShader;
+    Shader* brdfShader;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object_transform3d;
-    std::unordered_map<std::string, BaseModel*> loaded_models;
-    std::unordered_map<std::string, PointLight*> point_lights;
-    std::unordered_map<std::string, DirectionalLight*> directional_lights;
-    std::unordered_map<std::string, SpotLight*> spot_lights;
-    std::unordered_map<std::string, GameObject*> game_objects;
+    std::map<std::string, BaseModel*> loaded_models;
+    std::map<std::string, Texture*> loaded_textures;
+    std::map<std::string, Material*> loaded_materials;
+    std::map<std::string, PointLight*> point_lights;
+    std::map<std::string, DirectionalLight*> directional_lights;
+    std::map<std::string, SpotLight*> spot_lights;
+    std::map<std::string, GameObject*> game_objects;
     Transform3D* transform3d;
     GameObject* last_selected_object;
     GameObject* last_selected_object_transform3d;

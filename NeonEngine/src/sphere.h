@@ -20,6 +20,8 @@
 #include <vector>
 #include <glad/glad.h>
 
+struct Material;
+
 class Sphere : public BaseModel
 {
 public:
@@ -65,7 +67,7 @@ public:
     const float* getInterleavedVertices() const     { return interleavedVertices.data(); }
 
     // draw in VertexArray mode
-    void draw(Shader* shader, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color); // draw surface
+    void draw(Shader* shader, Material* draw_material, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color); // draw surface
     void drawLines(const float lineColor[4]) const;     // draw lines only
     void drawWithLines(const float lineColor[4]) const; // draw surface and lines
 

@@ -11,9 +11,10 @@ out vec2 TexCoords;
 
 uniform mat4 model;
 uniform mat3 model_normals;
-uniform mat4 model_view_projection;
+uniform mat4 view_projection;
 
-#define MAX_NUMBER_BONES 200
+const int MAX_NUMBER_BONES = 200;
+
 uniform mat4 bone_transforms[MAX_NUMBER_BONES];
 uniform int is_animated;
 
@@ -32,5 +33,5 @@ void main() {
     FragPos = vec3(model * PosLocal);
     Normal = model_normals * vec3(NormalLocal);
     TexCoords = aTexCoords;
-    gl_Position = model_view_projection * PosLocal;
+    gl_Position = view_projection * vec4(FragPos, 1.0);
 }

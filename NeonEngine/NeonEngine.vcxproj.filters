@@ -48,6 +48,9 @@
     <ClCompile Include="src\sphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\neon_engine.h">
@@ -110,6 +113,12 @@
     <ClInclude Include="src\cubemap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\pbr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\phong_lighting.frag">
@@ -131,6 +140,27 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\skybox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\PBR.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cubemap.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\equirectangular_to_cubemap.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\irradiance_convolution.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\prefilter.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\brdf.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\brdf.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -86,7 +86,7 @@ public:
     unsigned int getSideStartIndex() const  { return 0; }   // side starts from the begining
 
     // draw in VertexArray mode
-    void draw(Shader* shader, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color);          // draw all
+    void draw(Shader* shader, Material* draw_material, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color);          // draw all
     void drawBase() const;      // draw base cap only
     void drawTop() const;       // draw top cap only
     void drawSide() const;      // draw side only

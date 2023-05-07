@@ -4,6 +4,7 @@
 #include "input.h"
 #include "camera.h"
 #include "rendering.h"
+#include "logger.h"
 
 #include <stb_image.h>
 #include <glm/glm.hpp>
@@ -26,6 +27,7 @@ NeonEngine::NeonEngine() {
     user_interface = nullptr;
     input = nullptr;
     rendering = nullptr;
+    logger = new Logger("log.txt");
     glfw_major_version = 3;
     glfw_minor_version = 3;
     glsl_version = "#version 330";
@@ -43,7 +45,7 @@ NeonEngine::NeonEngine() {
 }
 
 NeonEngine::~NeonEngine() {
-
+    delete logger;
 }
 
 void NeonEngine::initialize_all_components() {
@@ -127,9 +129,11 @@ int NeonEngine::run() {
 
     rendering->set_viewport_shaders();
 
-    rendering->set_viewport_models();
+    rendering->set_viewport_data();
 
     rendering->initialize_game_objects();
+
+    rendering->set_pbr_shader();
 
     rendering->set_time_before_rendering_loop();
     
@@ -147,7 +151,7 @@ int NeonEngine::run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        user_interface->render_ui();
+        user_interface->render_app();
 
         // Rendering
         ImGui::Render();

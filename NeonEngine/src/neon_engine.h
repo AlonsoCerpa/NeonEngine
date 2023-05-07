@@ -9,6 +9,7 @@ class Rendering;
 struct GLFWwindow;
 class Shader;
 class Model;
+class Logger;
 
 class NeonEngine {
 public:
@@ -33,6 +34,8 @@ public:
 
     bool firstMouse;
     float lastX, lastY;
+
+    Logger* logger;
 
 private:
     NeonEngine();

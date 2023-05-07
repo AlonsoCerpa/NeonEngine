@@ -51,6 +51,10 @@ public:
     void add_cubemap_texture(const std::string& cubemap_texture_name, const std::vector<std::string>& cubemap_textures) {
         umap_name_to_texture_id[cubemap_texture_name] = load_cubemap_textures(cubemap_textures);
     }
+
+    void add_cubemap_texture(const std::string& cubemap_texture_name, int texture_id) {
+        umap_name_to_texture_id[cubemap_texture_name] = texture_id;
+    }
     
 private:
     std::vector<float> vertex_data = {
@@ -134,6 +138,8 @@ unsigned int load_cubemap_textures(const std::vector<std::string>& cubemap_textu
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
     return texture_id;
 }

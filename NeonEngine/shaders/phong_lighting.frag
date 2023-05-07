@@ -3,10 +3,14 @@ layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 IdColor;
 layout (location = 2) out vec4 IdColorTransform3d;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_specular1;
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
 
-#define SHININESS 32.0f
+uniform sampler2D texture_albedo;
+uniform sampler2D texture_specular;
+
+const float SHININESS = 32.0;
 
 struct PointLight {
     vec3 position;
@@ -44,19 +48,17 @@ struct SpotLight {
     float outer_cut_off;    
 };
 
-#define MAX_POINT_LIGHTS 50
-#define MAX_DIRECTIONAL_LIGHTS 10
-#define MAX_SPOT_LIGHTS 50
-
-in vec3 FragPos;
-in vec3 Normal;
-in vec2 TexCoords;
-
-uniform vec3 model_color;
+uniform vec3 albedo_model;
 uniform vec3 viewPos;
+
 uniform int num_point_lights;
 uniform int num_directional_lights;
 uniform int num_spot_lights;
+
+const int MAX_POINT_LIGHTS = 50;
+const int MAX_DIRECTIONAL_LIGHTS = 10;
+const int MAX_SPOT_LIGHTS = 50;
+
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
@@ -82,10 +84,10 @@ void main() {
     
 	if (render_only_ambient == 1) {
         if (render_one_color == 1) {
-            FragColor = vec4(model_color, 1.0);
+            FragColor = vec4(albedo_model, 1.0);
         }
         else {
-            FragColor = vec4(vec3(texture(texture_diffuse1, TexCoords)), 1.0);
+            FragColor = vec4(vec3(texture(texture_albedo, TexCoords)), 1.0);
         }
 	}
 	else {
@@ -122,13 +124,13 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     // combine results
     vec3 ambient, diffuse, specular;
     if (render_one_color == 0) {
-        ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
-        diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, TexCoords));
-        specular = light.specular * spec * vec3(texture(texture_specular1, TexCoords));
+        ambient = light.ambient * vec3(texture(texture_albedo, TexCoords));
+        diffuse = light.diffuse * diff * vec3(texture(texture_albedo, TexCoords));
+        specular = light.specular * spec * vec3(texture(texture_specular, TexCoords));
     }
     else {
-        ambient = light.ambient * model_color;
-        diffuse = light.diffuse * diff * model_color;
+        ambient = light.ambient * albedo_model;
+        diffuse = light.diffuse * diff * albedo_model;
         specular = light.specular * spec * vec3(0.5);
     }
     ambient *= attenuation;
@@ -148,13 +150,13 @@ vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
     // combine results
     vec3 ambient, diffuse, specular;
     if (render_one_color == 0) {
-        ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
-        diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, TexCoords));
-        specular = light.specular * spec * vec3(texture(texture_specular1, TexCoords));
+        ambient = light.ambient * vec3(texture(texture_albedo, TexCoords));
+        diffuse = light.diffuse * diff * vec3(texture(texture_albedo, TexCoords));
+        specular = light.specular * spec * vec3(texture(texture_specular, TexCoords));
     }
     else {
-        ambient = light.ambient * model_color;
-        diffuse = light.diffuse * diff * model_color;
+        ambient = light.ambient * albedo_model;
+        diffuse = light.diffuse * diff * albedo_model;
         specular = light.specular * spec * vec3(0.5);
     }
     return (ambient + diffuse + specular);
@@ -178,13 +180,13 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     // combine results
     vec3 ambient, diffuse, specular;
     if (render_one_color == 0) {
-        ambient = light.ambient * vec3(texture(texture_diffuse1, TexCoords));
-        diffuse = light.diffuse * diff * vec3(texture(texture_diffuse1, TexCoords));
-        specular = light.specular * spec * vec3(texture(texture_specular1, TexCoords));
+        ambient = light.ambient * vec3(texture(texture_albedo, TexCoords));
+        diffuse = light.diffuse * diff * vec3(texture(texture_albedo, TexCoords));
+        specular = light.specular * spec * vec3(texture(texture_specular, TexCoords));
     }
     else {
-        ambient = light.ambient * model_color;
-        diffuse = light.diffuse * diff * model_color;
+        ambient = light.ambient * albedo_model;
+        diffuse = light.diffuse * diff * albedo_model;
         specular = light.specular * spec * vec3(0.5);
     }
     ambient *= attenuation * intensity;

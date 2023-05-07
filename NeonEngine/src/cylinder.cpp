@@ -22,6 +22,7 @@
 #include "shader.h"
 #include "geometry.h"
 #include "rendering.h"
+#include "mesh.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -210,9 +211,39 @@ bool Cylinder::intersected_ray(const glm::vec3& orig, const glm::vec3& dir, floa
 // draw a cylinder in VertexArray mode
 // OpenGL RC must be set before calling it
 ///////////////////////////////////////////////////////////////////////////////
-void Cylinder::draw(Shader* shader, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color) {
+void Cylinder::draw(Shader* shader, Material* draw_material, bool is_selected, bool disable_depth_test, bool render_only_ambient, bool render_one_color) {
     if (disable_depth_test) {
         glDisable(GL_DEPTH_TEST);
+    }
+
+    const unsigned int OFFSET_TEXTURES = 3; // Accounting for PBR indirect light textures (irradiance, prefilter and BRDF maps)
+
+    if (draw_material != nullptr) {
+        shader->setInt("material_format", draw_material->format);
+
+        int num_active_textures = 0;
+        for (int type = TexAlbedo; type < TexLast; type++) {
+            TextureType texture_type = (TextureType)type;
+            std::string str_texture_type = Texture::get_long_name_of_texture_type(texture_type);
+            if (draw_material->textures.find(texture_type) != draw_material->textures.end()) {
+                Texture* texture = draw_material->textures[texture_type];
+                glActiveTexture(GL_TEXTURE0 + OFFSET_TEXTURES + num_active_textures);
+                shader->setInt(str_texture_type, OFFSET_TEXTURES + num_active_textures);
+                shader->setInt("has_" + str_texture_type, true);
+                glBindTexture(GL_TEXTURE_2D, texture->id);
+                num_active_textures++;
+            }
+            else {
+                shader->setInt("has_" + str_texture_type, false);
+            }
+        }
+    }
+    else {
+        shader->setInt("material_format", FileFormat::Default);
+
+        for (int type = TexAlbedo; type < TexLast; type++) {
+            shader->setInt("has_" + Texture::get_long_name_of_texture_type((TextureType)type), false);
+        }
     }
 
     shader->setInt("render_only_ambient", render_only_ambient);

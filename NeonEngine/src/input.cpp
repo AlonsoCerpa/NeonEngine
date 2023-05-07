@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "game_object.h"
 #include "transform3d.h"
+#include "user_interface.h"
 
 #include <GLFW/glfw3.h>
 #include <mutex>
@@ -48,6 +49,7 @@ void Input::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }*/
 
 void Input::process_viewport_input() {
+    UserInterface* user_interface = UserInterface::get_instance();
     Camera* camera_viewport = rendering->camera_viewport;
     float& deltaTime = neon_engine->delta_time_seconds;
     bool& firstMouse = neon_engine->firstMouse;
@@ -55,6 +57,7 @@ void Input::process_viewport_input() {
     double current_mouse_pos_x, current_mouse_pos_y;
     glfwGetCursorPos(neon_engine->window, &current_mouse_pos_x, &current_mouse_pos_y);
     ImVec2 current_mouse_pos(current_mouse_pos_x, current_mouse_pos_y);
+    ImVec2 imgui_mouse_pos = ImGui::GetIO().MousePos;
 
     if (transforming_selected_object) {
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
@@ -93,8 +96,12 @@ void Input::process_viewport_input() {
     }
     float squared_dist = (last_mouse_pos_selecting.x - current_mouse_pos.x) * (last_mouse_pos_selecting.x - current_mouse_pos.x);
     squared_dist += (last_mouse_pos_selecting.y - current_mouse_pos.y) * (last_mouse_pos_selecting.y - current_mouse_pos.y);
-    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && squared_dist <= 25.0f) {
-        std::cout << "CLICKED" << std::endl;
+
+    ImVec2 mouse_pos_in_window = ImVec2(imgui_mouse_pos.x - user_interface->viewport_window_pos.x, imgui_mouse_pos.y - user_interface->viewport_window_pos.y);
+
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && squared_dist <= 25.0f && mouse_pos_in_window.x >= 0 && mouse_pos_in_window.y >= 0 &&
+        mouse_pos_in_window.x <= user_interface->window_viewport_width && mouse_pos_in_window.y <= user_interface->window_viewport_height) {
+        std::cout << "CLICKED IN VIEWPORT" << std::endl;
         if (rendering->last_selected_object != nullptr) {
             rendering->last_selected_object->set_select_state(false);
             rendering->last_selected_object = nullptr;
