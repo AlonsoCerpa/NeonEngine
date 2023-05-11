@@ -24,6 +24,7 @@
 #include <imgui_impl_opengl3.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <filesystem>
 
 Rendering* Rendering::instance = nullptr;
 std::mutex Rendering::rendering_mutex;
@@ -41,11 +42,35 @@ Rendering::Rendering() {
     far_camera_viewport = 500.0f;
     last_selected_object = nullptr;
     last_selected_object_transform3d = nullptr;
+    cubemap = nullptr;
     outline_color = glm::vec3(255.0f/255.0f, 195.0f/255.0f, 7.0f/255.0f);
     screen_quad = nullptr;
     cubemap = nullptr;
-    exposure = 2.0f;
+    exposure = 1.0f;
     loaded_materials["Default"] = nullptr;
+    cubemap_texture_type = EnvironmentMap;
+    cubemap_texture_mipmap_level = 0.0f;
+
+    // PBR parameters
+    ENVIRONMENT_MAP_WIDTH = 2048;
+    ENVIRONMENT_MAP_HEIGHT = 2048;
+    IRRADIANCE_MAP_WIDTH = 128;
+    IRRADIANCE_MAP_HEIGHT = 128;
+    PREFILTER_MAP_WIDTH = 512;
+    PREFILTER_MAP_HEIGHT = 512;
+    BRDF_LUT_MAP_WIDTH = 2048;
+    BRDF_LUT_MAP_HEIGHT = 2048;
+
+    // set up projection and view matrices for capturing data onto the 6 cubemap face directions
+    captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+    captureViews = {
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+    };
 }
 
 Rendering::~Rendering() {
@@ -163,6 +188,9 @@ void Rendering::create_and_set_viewport_framebuffer() {
 
     // Bind to the default Framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // UPDATE CURRENT DISPLAYED TEXTURE
+    user_interface->update_displayed_texture();
 }
 
 void Rendering::set_viewport_shaders() {
@@ -178,33 +206,75 @@ void Rendering::set_viewport_shaders() {
     skybox_shader = new Shader("shaders/skybox.vert", "shaders/skybox.frag");
 }
 
+void Rendering::load_cubemap(const std::string& cubemap_name, const std::vector<std::string>& cubemap_paths, bool is_hdri) {
+    auto begin_timer = std::chrono::high_resolution_clock::now();
+    unsigned int cubemap_texture;
+    if (!is_hdri) {
+        cubemap->add_cubemap_texture(cubemap_name, cubemap_paths, is_hdri);
+        cubemap_texture = cubemap->umap_name_to_cubemap_data[cubemap_name].environment_texture;
+    }
+    else {
+        cubemap_texture = create_environment_map_from_equirectangular_map(cubemap_paths[0], captureFBO,
+            ENVIRONMENT_MAP_WIDTH, ENVIRONMENT_MAP_HEIGHT, captureProjection, captureViews,
+            equirectangularToCubemapShader);
+        cubemap->add_cubemap_texture(cubemap_name, cubemap_texture, is_hdri);
+    }
+    cubemap->umap_name_to_cubemap_data[cubemap_name].irradiance_texture = create_irradiance_map_from_environment_map(captureFBO, cubemap_texture, ENVIRONMENT_MAP_WIDTH, IRRADIANCE_MAP_WIDTH, IRRADIANCE_MAP_HEIGHT, captureProjection, captureViews, irradianceShader);
+    cubemap->umap_name_to_cubemap_data[cubemap_name].prefilter_texture = create_prefilter_map_from_environment_map(captureFBO, cubemap_texture, ENVIRONMENT_MAP_WIDTH, PREFILTER_MAP_WIDTH, PREFILTER_MAP_HEIGHT, captureProjection, captureViews, prefilterShader);
+    auto end_timer = std::chrono::high_resolution_clock::now();
+    double elapsed_time_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end_timer - begin_timer).count();
+    std::cout << "CREATING PBR DATA IN: " << elapsed_time_seconds << " seconds" << std::endl;
+}
+
 void Rendering::set_viewport_data() {
+    // Create PBR framebuffer
+    captureFBO = create_framebuffer_pbr();
+
+    // BRDF LUT texture
+    brdfLUTTexture = create_brdf_lut_texture(captureFBO, BRDF_LUT_MAP_WIDTH, BRDF_LUT_MAP_HEIGHT, brdfShader);
+
     // Cubemap
-    std::vector<std::string> skybox_textures_ocean_with_sky = {
+    cubemap = new Cubemap();
+
+    /*
+    std::vector<std::string> cubemap_ocean_with_sky = {
         "skyboxes/ocean_with_sky/right.jpg",
         "skyboxes/ocean_with_sky/left.jpg",
         "skyboxes/ocean_with_sky/top.jpg",
         "skyboxes/ocean_with_sky/bottom.jpg",
         "skyboxes/ocean_with_sky/front.jpg",
         "skyboxes/ocean_with_sky/back.jpg" };
-    std::vector<std::string> skybox_textures_nebula = {
+    load_cubemap("ocean_with_sky", ocean_with_sky, false);
+
+    std::vector<std::string> cubemap_nebula = {
         "skyboxes/nebula/right.png",
         "skyboxes/nebula/left.png",
         "skyboxes/nebula/top.png",
         "skyboxes/nebula/bottom.png",
         "skyboxes/nebula/front.png",
         "skyboxes/nebula/back.png" };
-    std::vector<std::string> skybox_textures_red_space = {
+    load_cubemap("nebula", nebula, false);
+
+    std::vector<std::string> cubemap_red_space = {
         "skyboxes/red_space/right.png",
         "skyboxes/red_space/left.png",
         "skyboxes/red_space/top.png",
         "skyboxes/red_space/bottom.png",
         "skyboxes/red_space/front.png",
         "skyboxes/red_space/back.png" };
+    load_cubemap("red_space", red_space, false);*/
 
-    cubemap = new Cubemap("ocean_with_sky", skybox_textures_ocean_with_sky);
-    cubemap->add_cubemap_texture("nebula", skybox_textures_nebula);
-    cubemap->add_cubemap_texture("red_space", skybox_textures_red_space);
+    for (const auto& entry : std::filesystem::directory_iterator("HDRIs")) {
+        if (entry.is_regular_file()) {
+            load_cubemap(entry.path().stem().string(), { entry.path().string() }, true);
+        }
+    }
+    
+    for (const auto& entry : std::filesystem::directory_iterator("HDRIs/hdri_pack")) {
+        if (entry.is_regular_file()) {
+            load_cubemap(entry.path().stem().string(), { entry.path().string() }, true);
+        }
+    }
 
     // Materials:
 
@@ -524,7 +594,14 @@ void Rendering::initialize_game_objects() {
     id_color_to_game_object[disk_border1->id_color] = disk_border1;
     
 
-    
+    Skybox* skybox = new Skybox("skybox");
+    skybox->type = TypeSkybox;
+    skybox->cubemap_name = "earth_space";
+    skybox->set_model_matrices_standard();
+    game_objects[skybox->name] = skybox;
+    id_color_to_game_object[skybox->id_color] = skybox;
+
+
     PointLight* point_light1 = new PointLight("point_light1", "sphere");
     point_light1->type = TypePointLight;
     point_light1->position = glm::vec3(-10.0f, 10.0f, 10.0f);
@@ -594,55 +671,31 @@ void Rendering::initialize_game_objects() {
     id_color_to_game_object[spot_light1->id_color] = spot_light1;
 }
 
-void Rendering::set_pbr_shader() {
-    const int ENVIRONMENT_MAP_WIDTH = 2048;
-    const int ENVIRONMENT_MAP_HEIGHT = 2048;
-    const int IRRADIANCE_MAP_WIDTH = 128;
-    const int IRRADIANCE_MAP_HEIGHT = 128;
-    const int PREFILTER_MAP_WIDTH = 512;
-    const int PREFILTER_MAP_HEIGHT = 512;
-    const int BRDF_LUT_MAP_WIDTH = 2048;
-    const int BRDF_LUT_MAP_HEIGHT = 2048;
-
-    // set up projection and view matrices for capturing data onto the 6 cubemap face directions
-    glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    std::vector<glm::mat4> captureViews =
-    {
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-    };
-
-    
-    unsigned int captureFBO = create_framebuffer_pbr();
-    envCubemap = create_environment_map_from_equirectangular_map("HDRIs/earth_space_low_res.hdr", captureFBO,
-                                                                 ENVIRONMENT_MAP_WIDTH, ENVIRONMENT_MAP_HEIGHT, captureProjection, captureViews,
-                                                                 equirectangularToCubemapShader);
-    irradianceMap = create_irradiance_map_from_environment_map(captureFBO, envCubemap, IRRADIANCE_MAP_WIDTH, IRRADIANCE_MAP_HEIGHT, captureProjection, captureViews, irradianceShader);
-    prefilterMap = create_prefilter_map_from_environment_map(captureFBO, envCubemap, ENVIRONMENT_MAP_WIDTH, PREFILTER_MAP_WIDTH, PREFILTER_MAP_HEIGHT, captureProjection, captureViews, prefilterShader);
-    brdfLUTTexture = create_brdf_lut_texture(captureFBO, BRDF_LUT_MAP_WIDTH, BRDF_LUT_MAP_HEIGHT, brdfShader);
-    
+void Rendering::set_pbr_shader() {    
     /*
-    stbi_set_flip_vertically_on_load(false);
-    envCubemap = load_hdr_file_to_cubemap({ "PBR_data/environment_cubemap.hdr" }, ENVIRONMENT_MAP_WIDTH, ENVIRONMENT_MAP_HEIGHT);
-    irradianceMap = load_hdr_file_to_cubemap({ "PBR_data/irradiance_cubemap.hdr" }, IRRADIANCE_MAP_WIDTH, IRRADIANCE_MAP_HEIGHT);
-    prefilterMap = load_hdr_file_to_cubemap({ "PBR_data/prefilter_cubemap0.hdr", "PBR_data/prefilter_cubemap1.hdr", "PBR_data/prefilter_cubemap2.hdr", "PBR_data/prefilter_cubemap3.hdr", "PBR_data/prefilter_cubemap4.hdr" },
-                                            PREFILTER_MAP_WIDTH, PREFILTER_MAP_HEIGHT);
-    brdfLUTTexture = load_hdr_texture("PBR_data/brdf_LUT_texture.hdr");
-    stbi_set_flip_vertically_on_load(true);*/
-    
-    
+    // SAVING PBR DATA TO FILES - UNNCESSARY BECAUSE LOADING PBR DATA LASTS ALMOST THE SAME TIME AS CREATING THE PBR DATA ON THE FLY
     save_cubemap_to_hdr_file(envCubemap, 3, { ENVIRONMENT_MAP_WIDTH }, { ENVIRONMENT_MAP_HEIGHT }, { "PBR_data/environment_cubemap.hdr" });
     save_cubemap_to_hdr_file(irradianceMap, 3, { IRRADIANCE_MAP_WIDTH }, { IRRADIANCE_MAP_HEIGHT }, { "PBR_data/irradiance_cubemap.hdr" });
     save_cubemap_to_hdr_file(prefilterMap, 3, { PREFILTER_MAP_WIDTH, PREFILTER_MAP_WIDTH / 2, PREFILTER_MAP_WIDTH / 4, PREFILTER_MAP_WIDTH / 8, PREFILTER_MAP_WIDTH / 16 },
                              { PREFILTER_MAP_HEIGHT, PREFILTER_MAP_HEIGHT / 2, PREFILTER_MAP_HEIGHT / 4, PREFILTER_MAP_HEIGHT / 8, PREFILTER_MAP_HEIGHT / 16 },
                              { "PBR_data/prefilter_cubemap0.hdr", "PBR_data/prefilter_cubemap1.hdr", "PBR_data/prefilter_cubemap2.hdr", "PBR_data/prefilter_cubemap3.hdr", "PBR_data/prefilter_cubemap4.hdr" });
     save_texture_to_hdr_file(brdfLUTTexture, 4, BRDF_LUT_MAP_WIDTH, BRDF_LUT_MAP_HEIGHT, "PBR_data/brdf_LUT_texture.hdr");
+    */
 
-    cubemap->add_cubemap_texture("hdri_cubemap", envCubemap);
+    /*
+    // LOADING PBR DATA
+    auto begin_timer = std::chrono::high_resolution_clock::now();
+    stbi_set_flip_vertically_on_load(false);
+    envCubemap = load_hdr_file_to_cubemap({ "PBR_data/environment_cubemap.hdr" }, ENVIRONMENT_MAP_WIDTH, ENVIRONMENT_MAP_HEIGHT);
+    irradianceMap = load_hdr_file_to_cubemap({ "PBR_data/irradiance_cubemap.hdr" }, IRRADIANCE_MAP_WIDTH, IRRADIANCE_MAP_HEIGHT);
+    prefilterMap = load_hdr_file_to_cubemap({ "PBR_data/prefilter_cubemap0.hdr", "PBR_data/prefilter_cubemap1.hdr", "PBR_data/prefilter_cubemap2.hdr", "PBR_data/prefilter_cubemap3.hdr", "PBR_data/prefilter_cubemap4.hdr" },
+                                            PREFILTER_MAP_WIDTH, PREFILTER_MAP_HEIGHT);
+    brdfLUTTexture = load_hdr_texture("PBR_data/brdf_LUT_texture.hdr");
+    stbi_set_flip_vertically_on_load(true);
+    auto end_timer = std::chrono::high_resolution_clock::now();
+    double elapsed_time_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end_timer - begin_timer).count();
+    std::cout << "LOADING PBR DATA IN: " << elapsed_time_seconds << " seconds" << std::endl;
+    */
 }
 
 void Rendering::set_time_before_rendering_loop() {
@@ -676,9 +729,9 @@ void Rendering::render_viewport() {
 
     // bind pre-computed IBL data
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->umap_name_to_cubemap_data[((Skybox*)game_objects["skybox"])->cubemap_name].irradiance_texture);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->umap_name_to_cubemap_data[((Skybox*)game_objects["skybox"])->cubemap_name].prefilter_texture);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
@@ -736,7 +789,9 @@ void Rendering::render_viewport() {
 
     for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
         GameObject* game_object = it->second;
-        game_object->draw(lighting_shader, false);
+        if (game_object->type != TypeSkybox) {
+            game_object->draw(lighting_shader, false);
+        }
     }
 
     // Render only the last selected object (if it exists) to later outline the shape of this object
@@ -744,7 +799,7 @@ void Rendering::render_viewport() {
     glDrawBuffers(1, attachments2);
     selection_shader->use();
     selection_shader->setMat4("view_projection", view_projection);
-    if (last_selected_object != nullptr) {
+    if (last_selected_object != nullptr && last_selected_object->type != TypeSkybox) {
         last_selected_object->draw(selection_shader, true);
     }
 
@@ -754,10 +809,11 @@ void Rendering::render_viewport() {
     view_skybox = glm::mat4(glm::mat3(view)); // remove translation from the view matrix so it doesn't affect the skybox
     view_projection_skybox = projection * view_skybox;
     skybox_shader->use();
-    skybox_shader->setInt("is_hdr", true);
+    skybox_shader->setInt("is_hdri", cubemap->umap_name_to_cubemap_data[((Skybox*)game_objects["skybox"])->cubemap_name].is_hdri);
     skybox_shader->setFloat("exposure", exposure);
     skybox_shader->setMat4("view_projection", view_projection_skybox);
-    cubemap->draw(skybox_shader, "hdri_cubemap");
+    skybox_shader->setFloat("mipmap_level", cubemap_texture_mipmap_level);
+    cubemap->draw(skybox_shader, ((Skybox*)game_objects["skybox"])->cubemap_name, cubemap_texture_type);
 
     // Draw border outlining the selected object (if it exists one)
     outline_shader->use();
@@ -772,7 +828,7 @@ void Rendering::render_viewport() {
     glDrawBuffers(3, attachments1);
     lighting_shader->use();
     lighting_shader->setInt("is_transform3d", 1);
-    if (last_selected_object != nullptr) {
+    if (last_selected_object != nullptr && last_selected_object->type != TypeSkybox) {
         transform3d->update_model_matrices(last_selected_object);
         transform3d->draw(lighting_shader);
     }
@@ -790,14 +846,14 @@ GameObject* Rendering::check_mouse_over_models() {
     ImVec2 mouse_pos_in_window = ImVec2(mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y);
     ImVec2& viewport_texture_pos = user_interface->viewport_texture_pos;
     ImVec2 mouse_pos_in_viewport_texture = ImVec2(mouse_pos_in_window.x - viewport_texture_pos.x, mouse_pos_in_window.y - viewport_texture_pos.y);
-    std::cout << mouse_pos_in_viewport_texture.x << " " << texture_viewport_height - mouse_pos_in_viewport_texture.y << std::endl;
+    //std::cout << mouse_pos_in_viewport_texture.x << " " << texture_viewport_height - mouse_pos_in_viewport_texture.y << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     glReadBuffer(GL_COLOR_ATTACHMENT1);
     GLubyte pixel[4];
     pixel[0] = pixel[1] = pixel[2] = pixel[3] = 0;
     glReadPixels(mouse_pos_in_viewport_texture.x, texture_viewport_height - mouse_pos_in_viewport_texture.y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-    std::cout << "PIXEL: " << (int)pixel[0] << " " << (int)pixel[1] << " " << (int)pixel[2] << std::endl;
+    //std::cout << "PIXEL: " << (int)pixel[0] << " " << (int)pixel[1] << " " << (int)pixel[2] << std::endl;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

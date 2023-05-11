@@ -29,6 +29,8 @@ class Model;
 class Texture;
 class Material;
 
+enum CubemapTextureType;
+
 class Rendering {
 public:
     static Rendering* get_instance();
@@ -40,6 +42,7 @@ public:
     void set_opengl_state();
     void set_viewport_shaders();
     void add_model_to_loaded_data(Model* model);
+    void load_cubemap(const std::string& cubemap_name, const std::vector<std::string>& cube_map_paths, bool is_hdri);
     void set_viewport_data();
     void initialize_game_objects();
     void set_pbr_shader();
@@ -62,12 +65,11 @@ public:
     glm::mat4 view_skybox, view_projection_skybox;
     Camera* camera_viewport;
     Quad* screen_quad;
-    Cubemap* cubemap;
     float near_camera_viewport, far_camera_viewport;
     float exposure;
     unsigned int framebuffer, textureColorbuffer, texture_id_colors, texture_selected_color_buffer;
     unsigned int texture_id_colors_transform3d, rboDepthStencil;
-    unsigned int envCubemap, irradianceMap, prefilterMap, brdfLUTTexture;
+    unsigned int brdfLUTTexture;
     std::chrono::time_point<std::chrono::system_clock> time_before_rendering;
     Shader* phong_shader;
     Shader* pbr_shader;
@@ -78,6 +80,9 @@ public:
     Shader* irradianceShader;
     Shader* prefilterShader;
     Shader* brdfShader;
+    Cubemap* cubemap;
+    CubemapTextureType cubemap_texture_type;
+    float cubemap_texture_mipmap_level;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object_transform3d;
     std::map<std::string, BaseModel*> loaded_models;
@@ -91,6 +96,20 @@ public:
     GameObject* last_selected_object;
     GameObject* last_selected_object_transform3d;
     glm::vec3 outline_color;
+
+    // PBR parameters
+    int ENVIRONMENT_MAP_WIDTH;
+    int ENVIRONMENT_MAP_HEIGHT;
+    int IRRADIANCE_MAP_WIDTH;
+    int IRRADIANCE_MAP_HEIGHT;
+    int PREFILTER_MAP_WIDTH;
+    int PREFILTER_MAP_HEIGHT;
+    int BRDF_LUT_MAP_WIDTH;
+    int BRDF_LUT_MAP_HEIGHT;
+    unsigned int captureFBO;
+    glm::mat4 captureProjection;
+    std::vector<glm::mat4> captureViews;
+
     UserInterface* user_interface;
     NeonEngine* neon_engine;
 

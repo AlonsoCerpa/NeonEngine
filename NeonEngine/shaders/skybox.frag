@@ -1,11 +1,12 @@
-#version 330 core
+#version 460 core
 out vec4 FragColor;
 
 in vec3 WorldPos;
 
 uniform samplerCube cubemap;
-uniform int is_hdr;
+uniform int is_hdri;
 uniform float exposure;
+uniform float mipmap_level;
 
 vec3 aces_approx(vec3 v)
 {
@@ -19,10 +20,10 @@ vec3 aces_approx(vec3 v)
 }
 
 void main() {
-    vec3 envColor = textureLod(cubemap, WorldPos, 0.0).rgb;
+    vec3 envColor = textureLod(cubemap, WorldPos, mipmap_level).rgb;
     
     // Exposure, HDR tone mapping and gamma correct
-    if (is_hdr == 1) {
+    if (is_hdri == 1) {
         envColor *= exposure;
         //envColor = envColor / (envColor + vec3(1.0));
         envColor = aces_approx(envColor);

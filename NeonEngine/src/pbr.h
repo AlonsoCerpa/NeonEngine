@@ -34,11 +34,18 @@ unsigned int create_environment_map_from_equirectangular_map(const std::string& 
     stbi_set_flip_vertically_on_load(true);
     int width, height, nrComponents;
     float* data = stbi_loadf(equirectangular_map.c_str(), &width, &height, &nrComponents, 0);
+    GLenum format;
+    if (nrComponents == 3) {
+        format = GL_RGB;
+    }
+    else { // nrComponents == 4
+        format = GL_RGBA;
+    }
     unsigned int hdrTexture;
     if (data) {
         glGenTextures(1, &hdrTexture);
         glBindTexture(GL_TEXTURE_2D, hdrTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, format, GL_FLOAT, data); // note how we specify the texture's data value to be float
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -57,7 +64,7 @@ unsigned int create_environment_map_from_equirectangular_map(const std::string& 
     glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
     for (unsigned int i = 0; i < 6; ++i)
     {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, environment_map_width, environment_map_height, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, environment_map_width, environment_map_height, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -93,7 +100,7 @@ unsigned int create_environment_map_from_equirectangular_map(const std::string& 
     return envCubemap;
 }
 
-unsigned int create_irradiance_map_from_environment_map(unsigned int captureFBO, unsigned int envCubemap, int irradiance_map_width, int irradiance_map_height,
+unsigned int create_irradiance_map_from_environment_map(unsigned int captureFBO, unsigned int envCubemap, int environment_map_width, int irradiance_map_width, int irradiance_map_height,
                                                         const glm::mat4& captureProjection, const std::vector<glm::mat4>& captureViews,
                                                         Shader* irradianceShader) {
     // create an irradiance cubemap, and re-scale capture FBO to irradiance scale
@@ -102,7 +109,7 @@ unsigned int create_irradiance_map_from_environment_map(unsigned int captureFBO,
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
     for (unsigned int i = 0; i < 6; ++i)
     {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, irradiance_map_width, irradiance_map_height, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, irradiance_map_width, irradiance_map_height, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -116,6 +123,7 @@ unsigned int create_irradiance_map_from_environment_map(unsigned int captureFBO,
 
     // solve diffuse integral by convolution to create an irradiance (cube)map
     irradianceShader->use();
+    irradianceShader->setFloat("ENVIRONMENT_MAP_SIZE", (float)environment_map_width);
     irradianceShader->setInt("environmentMap", 0);
     irradianceShader->setMat4("projection", captureProjection);
     glActiveTexture(GL_TEXTURE0);
@@ -146,7 +154,7 @@ unsigned int create_prefilter_map_from_environment_map(unsigned int captureFBO, 
     glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
     for (unsigned int i = 0; i < 6; ++i)
     {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, prefilter_map_width, prefilter_map_height, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, prefilter_map_width, prefilter_map_height, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -198,7 +206,7 @@ unsigned int create_brdf_lut_texture(unsigned int captureFBO, int brdf_lut_map_w
 
     // pre-allocate enough memory for the LUT texture.
     glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, brdf_lut_map_width, brdf_lut_map_height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, brdf_lut_map_width, brdf_lut_map_height, 0, GL_RGBA, GL_FLOAT, 0);
     // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

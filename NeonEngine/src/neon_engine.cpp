@@ -28,9 +28,9 @@ NeonEngine::NeonEngine() {
     input = nullptr;
     rendering = nullptr;
     logger = new Logger("log.txt");
-    glfw_major_version = 3;
-    glfw_minor_version = 3;
-    glsl_version = "#version 330";
+    glfw_major_version = 4;
+    glfw_minor_version = 6;
+    glsl_version = "#version 460 core";
     window_title = "Neon Engine";
     window_width = 2560;
     window_height = 1440;
@@ -132,8 +132,6 @@ int NeonEngine::run() {
     rendering->set_viewport_data();
 
     rendering->initialize_game_objects();
-
-    rendering->set_pbr_shader();
 
     rendering->set_time_before_rendering_loop();
     

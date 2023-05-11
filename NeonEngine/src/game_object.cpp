@@ -28,6 +28,9 @@ std::string game_object_type_to_string(GameObjectType type) {
     else if (type == TypeSpotLight) {
         game_object_type = "SpotLight";
     }
+    else if (type == TypeSkybox) {
+        game_object_type = "Skybox";
+    }
     else {
         game_object_type = "UnrecognizedType";
     }
@@ -126,7 +129,13 @@ void GameObject::clean() {
     delete color_generator;
 }
 
-//////////////////////////////// LIGHTS //////////////////////////////////////
+//////////////////////////////// SKYBOX ////////////////////////////////
+
+Skybox::Skybox(const std::string& name) : GameObject(name, "") {
+    cubemap_name = "";
+}
+
+//////////////////////////////// LIGHTS ////////////////////////////////
 
 Light::Light(const std::string& name, const std::string& model_name) : GameObject(name, model_name) {
     ambient = glm::vec3(0.05f);

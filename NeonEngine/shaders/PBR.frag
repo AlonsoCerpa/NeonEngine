@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 IdColor;
 layout (location = 2) out vec4 IdColorTransform3d;
@@ -165,7 +165,7 @@ void main() {
        
         // input lighting data
         vec3 V = normalize(viewPos - FragPos);
-        vec3 R = reflect(-V, N); 
+        vec3 R = reflect(-V, N);
 
         // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
         // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    

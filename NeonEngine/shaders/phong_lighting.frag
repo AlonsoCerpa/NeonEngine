@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 IdColor;
 layout (location = 2) out vec4 IdColorTransform3d;

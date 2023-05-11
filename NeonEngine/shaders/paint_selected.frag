@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 layout (location = 0) out vec4 SelectedColor;
 
 uniform int paint_selected_texture;

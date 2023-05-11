@@ -20,7 +20,8 @@ enum GameObjectType {
     TypeBaseModel,
     TypePointLight,
     TypeDirectionalLight,
-    TypeSpotLight
+    TypeSpotLight,
+    TypeSkybox
 };
 
 std::string game_object_type_to_string(GameObjectType type);
@@ -57,6 +58,13 @@ public:
     void set_select_state(bool is_game_obj_selected);
 
     static void clean();
+};
+
+class Skybox : public GameObject {
+public:
+    std::string cubemap_name;
+
+    Skybox(const std::string& name);
 };
 
 class Light : public GameObject {

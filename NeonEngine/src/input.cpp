@@ -101,17 +101,20 @@ void Input::process_viewport_input() {
 
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && squared_dist <= 25.0f && mouse_pos_in_window.x >= 0 && mouse_pos_in_window.y >= 0 &&
         mouse_pos_in_window.x <= user_interface->window_viewport_width && mouse_pos_in_window.y <= user_interface->window_viewport_height) {
-        std::cout << "CLICKED IN VIEWPORT" << std::endl;
         if (rendering->last_selected_object != nullptr) {
             rendering->last_selected_object->set_select_state(false);
             rendering->last_selected_object = nullptr;
         }
         GameObject* selected_object = rendering->check_mouse_over_models();
         if (selected_object != nullptr) {
-            std::cout << "FOUND INTERSECTION" << std::endl;
             selected_object->set_select_state(true);
             rendering->last_selected_object = selected_object;
-            std::cout << "INTERSECTION DETECTED: " << selected_object->name << std::endl;
+        }
+        else {
+            std::cout << "skybox" << std::endl;
+            selected_object = rendering->game_objects["skybox"];
+            selected_object->set_select_state(true);
+            rendering->last_selected_object = selected_object;
         }
     }
 
