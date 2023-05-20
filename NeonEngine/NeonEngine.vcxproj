@@ -133,6 +133,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\bloom.cpp" />
+    <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\opengl_utils.cpp" />
     <ClCompile Include="src\cubemap.cpp" />
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\game_object.cpp" />
@@ -147,6 +150,7 @@
     <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\bloom.h" />
     <ClInclude Include="src\logger.h" />
     <ClInclude Include="src\pbr.h" />
     <ClInclude Include="src\cubemap.h" />
@@ -171,6 +175,8 @@
     <ClInclude Include="src\transform3d.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\bloom_upsample.frag" />
+    <None Include="shaders\bloom_downsample.frag" />
     <None Include="shaders\brdf.frag" />
     <None Include="shaders\brdf.vert" />
     <None Include="shaders\prefilter.frag" />
@@ -185,6 +191,7 @@
     <None Include="shaders\vertices_quad.vert" />
     <None Include="shaders\skybox.frag" />
     <None Include="shaders\skybox.vert" />
+    <None Include="shaders\hdr_to_ldr.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

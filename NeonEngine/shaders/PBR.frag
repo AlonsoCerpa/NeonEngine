@@ -2,6 +2,7 @@
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 IdColor;
 layout (location = 2) out vec4 IdColorTransform3d;
+layout (location = 3) out vec4 BrightColor;
 
 in vec3 FragPos;
 in vec3 Normal;
@@ -22,6 +23,7 @@ uniform int has_texture_roughness;
 uniform int has_texture_emission;
 uniform int has_texture_ambient_occlusion;
 
+uniform float intensity;
 uniform vec3 albedo_model;
 uniform float metalness_model;
 uniform float roughness_model;
@@ -36,9 +38,11 @@ const float PI = 3.14159265359;
 
 struct PointLight {
     vec3 position;
+
+    vec3 light_color;
+    float intensity;
 	
     vec3 ambient;
-    vec3 radiance;
     vec3 specular;
 
     float constant;
@@ -48,9 +52,11 @@ struct PointLight {
 
 struct DirectionalLight {
     vec3 direction;
+
+    vec3 light_color;
+    float intensity;
 	
     vec3 ambient;
-    vec3 radiance;
     vec3 specular;
 };
 
@@ -58,8 +64,10 @@ struct SpotLight {
     vec3 position;
     vec3 direction;
 
+    vec3 light_color;
+    float intensity;
+
     vec3 ambient;
-    vec3 radiance;
     vec3 specular;
 
     float constant;
@@ -76,9 +84,9 @@ uniform int num_point_lights;
 uniform int num_directional_lights;
 uniform int num_spot_lights;
 
-const int MAX_POINT_LIGHTS = 50;
-const int MAX_DIRECTIONAL_LIGHTS = 10;
-const int MAX_SPOT_LIGHTS = 50;
+const int MAX_POINT_LIGHTS = 20;
+const int MAX_DIRECTIONAL_LIGHTS = 5;
+const int MAX_SPOT_LIGHTS = 10;
 
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
@@ -91,17 +99,12 @@ uniform int is_transform3d;
 
 uniform int material_format;
 
-uniform float exposure;
-
 // Material/File formats
 const int Default = 0;
 const int glTF = 1;
 const int FBX = 2;
 
 // Function declarations
-vec3 aces_approx(vec3 v);
-vec3 uncharted2_tonemap_partial(vec3 x);
-vec3 uncharted2_filmic(vec3 v);
 vec3 getNormalFromMap();
 float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
@@ -120,7 +123,8 @@ void main() {
     }
     if (render_only_ambient == 1) {
         if (render_one_color == 1) {
-            FragColor = vec4(albedo_model, 1.0);
+            // Used in particular for rendering lights with bloom
+            FragColor = vec4(albedo_model * intensity, 1.0);
         }
         else {
             FragColor = vec4(vec3(texture(texture_albedo, TexCoords)), 1.0);
@@ -184,7 +188,7 @@ void main() {
             float dist = length(pointLights[i].position - FragPos);
             float attenuation = 1.0 / (pointLights[i].constant + pointLights[i].linear * dist + pointLights[i].quadratic * (dist * dist));
             // radiance
-            vec3 radiance = pointLights[i].radiance * attenuation;
+            vec3 radiance = pointLights[i].light_color * pointLights[i].intensity * attenuation;
 
             // Cook-Torrance BRDF
             float NDF = DistributionGGX(N, H, roughness);
@@ -219,7 +223,7 @@ void main() {
             vec3 L = normalize(-directionalLights[i].direction);
             vec3 H = normalize(V + L);
             // radiance
-            vec3 radiance = directionalLights[i].radiance;
+            vec3 radiance = directionalLights[i].light_color * directionalLights[i].intensity;
 
             // Cook-Torrance BRDF
             float NDF = DistributionGGX(N, H, roughness);   
@@ -261,7 +265,7 @@ void main() {
             float epsilon = spotLights[i].inner_cut_off - spotLights[i].outer_cut_off;
             float intensity = clamp((theta - spotLights[i].outer_cut_off) / epsilon, 0.0, 1.0);
             // radiance
-            vec3 radiance = spotLights[i].radiance * attenuation * intensity;
+            vec3 radiance = spotLights[i].light_color * spotLights[i].intensity * attenuation * intensity;
 
             // Cook-Torrance BRDF
             float NDF = DistributionGGX(N, H, roughness);
@@ -310,27 +314,20 @@ void main() {
     
         vec3 color = ambient + Lo;
 
-        // Exposure
-        color *= exposure;
-        // HDR tonemapping
-        //color = color / (color + vec3(1.0)); // Reinhard tone mapping
-        color = aces_approx(color); // Approximated ACES tone mapping
-        // gamma correct
-        color = pow(color, vec3(1.0/2.2)); 
-
         FragColor = vec4(color , 1.0);
     }
-}
 
-// Approximated ACES (Academy Color Encoding System) tone mapping by Krzysztof Narkowicz
-vec3 aces_approx(vec3 v) {
-    v *= 0.6f;
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
-    return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0f, 1.0f);
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        BrightColor = vec4(FragColor.rgb, 1.0);
+	else
+		BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+
+    // For lights, we render the object with only the albedo color, but the bright color takes
+    // into consideration both the albedo color and the intensity
+    if (render_one_color == 1 && render_only_ambient == 1) {
+        FragColor = vec4(albedo_model, 1.0);
+    }
 }
 
 // Easy trick to get tangent-normals to world-space to keep PBR code simplified.

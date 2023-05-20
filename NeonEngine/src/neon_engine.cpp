@@ -149,9 +149,12 @@ int NeonEngine::run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        // Main rendering
         user_interface->render_app();
+        // Update current displayed texture
+        user_interface->update_displayed_texture();
 
-        // Rendering
+        // ImGui rendering
         ImGui::Render();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -169,6 +172,7 @@ int NeonEngine::run() {
 
     // Cleanup
     rendering->clean();
+    rendering->clean_viewport_framebuffer();
     user_interface->clean_imgui();
 
     clean_gflw();

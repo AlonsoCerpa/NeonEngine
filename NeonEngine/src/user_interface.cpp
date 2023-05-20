@@ -41,6 +41,8 @@ UserInterface::UserInterface() {
     frames_per_second_ui = 0.0f;
     rendered_texture = 0;
     displayed_rendering = DisplayedColors;
+    passed_time_resize = 0.0f;
+    was_resized = false;
 }
 
 UserInterface::~UserInterface() {
@@ -154,23 +156,23 @@ void UserInterface::check_if_viewport_window_resized() {
     int new_window_viewport_width = ImGui::GetWindowWidth();
     int new_window_viewport_height = ImGui::GetWindowHeight();
     if (new_window_viewport_width != window_viewport_width || new_window_viewport_height != window_viewport_height) {
-        if (!first_time_viewport_fbo) {
-            rendering->clean_viewport_framebuffer();
-        }
-        else {
-            first_time_viewport_fbo = false;
-        }
         window_viewport_width = new_window_viewport_width;
         window_viewport_height = new_window_viewport_height;
         texture_viewport_width = new_window_viewport_width - texture_viewport_reduce_width_px;
         texture_viewport_height = new_window_viewport_height - texture_viewport_reduce_height_px;
-        rendering->create_and_set_viewport_framebuffer();
+        if (first_time_viewport_fbo) {
+            rendering->setup_framebuffer_and_textures();
+            first_time_viewport_fbo = false;
+        }
+        else {
+            rendering->resize_textures();
+        }
     }
 }
 
 void UserInterface::update_displayed_texture() {
     if (displayed_rendering == DisplayedColors) {
-        rendered_texture = rendering->textureColorbuffer;
+        rendered_texture = rendering->textureLDRColorbuffer;
     }
     else if (displayed_rendering == DisplayedIdColors) {
         rendered_texture = rendering->texture_id_colors;
@@ -184,8 +186,14 @@ void UserInterface::update_displayed_texture() {
     else if (displayed_rendering == DisplayedBRDFLut) {
         rendered_texture = rendering->brdfLUTTexture;
     }
+    else if (displayed_rendering == DisplayedHDRBrightColors) {
+        rendered_texture = rendering->textureHDRBrightColorbuffer;
+    }
+    else if (displayed_rendering == DisplayedBloom) {
+        rendered_texture = rendering->bloom_textures[0].texture_id;
+    }
     else {
-        rendered_texture = rendering->textureColorbuffer;
+        rendered_texture = rendering->textureLDRColorbuffer;
     }
 }
 
@@ -319,6 +327,26 @@ void UserInterface::render_app() {
 
         ImGui::TableSetColumnIndex(1);
         ImGui::DragFloat("##Exposure", &(rendering->exposure), 0.05f, 0.0f, std::numeric_limits<float>::max());
+
+        // Row 3: Activate Bloom
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Activate bloom");
+
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Checkbox("##ActivateBloom", &(rendering->bloom_activated));
+
+        // Row: Bloom Strength
+        if (rendering->bloom_activated) {
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Bloom strength");
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::DragFloat("##BloomStrength", &(rendering->bloom_strength), 0.001f, 0.0f, std::numeric_limits<float>::max());
+        }
 
         ImGui::PopItemWidth();
 
@@ -527,7 +555,6 @@ void UserInterface::show_game_object_ui(GameObject* game_object) {
                     ImGui::TableSetColumnIndex(1);
                     ImGui::ColorEdit3("##Albedo", &(game_object->albedo.x));
 
-
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     ImGui::Text("Metalness");
@@ -644,23 +671,15 @@ void UserInterface::show_game_object_ui(GameObject* game_object) {
                 if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
                     if (ImGui::BeginTable("LightTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg)) {
                         Light* light = (Light*)game_object;
-                        // Row 1: Color of the light
-                        ImGui::TableNextRow();
 
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::Text("Light Color");
-
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::PushItemWidth(-1);
-                        ImGui::ColorEdit3("##LightColor", &(light->light_color.x));
-
-                        // Row 2: Intensity of the light
+                        // Row 1: Intensity of the light
                         ImGui::TableNextRow();
 
                         ImGui::TableSetColumnIndex(0);
                         ImGui::Text("Light Intensity");
 
                         ImGui::TableSetColumnIndex(1);
+                        ImGui::PushItemWidth(-1);
                         ImGui::DragFloat("##LightIntensity", &(light->intensity), 0.5f, 0.0f, std::numeric_limits<float>::max());
 
                         // If it is a point light
@@ -871,6 +890,12 @@ std::string displayed_rendering_to_string(DisplayedRendering displayed_rendering
     }
     else if (displayed_rendering == DisplayedBRDFLut) {
         return "DisplayedBRDFLut";
+    }
+    else if (displayed_rendering == DisplayedHDRBrightColors) {
+        return "DisplayedHDRBrightColors";
+    }
+    else if (displayed_rendering == DisplayedBloom) {
+        return "DisplayedBloom";
     }
     else {
         return "DisplayedColors";

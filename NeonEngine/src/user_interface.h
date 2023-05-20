@@ -16,6 +16,8 @@ enum DisplayedRendering {
     DisplayedIdColorsTransform3d,
     DisplayedSelectedColors,
     DisplayedBRDFLut,
+    DisplayedHDRBrightColors,
+    DisplayedBloom,
     DisplayedLast
 };
 
@@ -46,6 +48,8 @@ public:
     bool first_time_viewport_fbo;
     ImVec2 viewport_window_pos;
     ImVec2 viewport_texture_pos;
+    float passed_time_resize;
+    bool was_resized;
 
 private:
     UserInterface();

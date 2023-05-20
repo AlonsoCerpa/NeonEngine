@@ -1,5 +1,7 @@
 #pragma once
 
+#include "bloom.h"
+
 #include <mutex>
 #include <vector>
 #include <unordered_map>
@@ -48,7 +50,8 @@ public:
     void set_pbr_shader();
     void set_time_before_rendering_loop();
     void render_viewport();
-    void create_and_set_viewport_framebuffer();
+    void setup_framebuffer_and_textures();
+    void resize_textures();
     void clean();
     void clean_viewport_framebuffer();
     GameObject* check_mouse_over_models();
@@ -67,8 +70,8 @@ public:
     Quad* screen_quad;
     float near_camera_viewport, far_camera_viewport;
     float exposure;
-    unsigned int framebuffer, textureColorbuffer, texture_id_colors, texture_selected_color_buffer;
-    unsigned int texture_id_colors_transform3d, rboDepthStencil;
+    unsigned int framebuffer, textureHDRColorbuffer, texture_id_colors, texture_selected_color_buffer, textureLDRColorbuffer;
+    unsigned int textureHDRBrightColorbuffer, texture_id_colors_transform3d, rboDepthStencil;
     unsigned int brdfLUTTexture;
     std::chrono::time_point<std::chrono::system_clock> time_before_rendering;
     Shader* phong_shader;
@@ -80,9 +83,17 @@ public:
     Shader* irradianceShader;
     Shader* prefilterShader;
     Shader* brdfShader;
+    Shader* bloom_downsample_shader;
+    Shader* bloom_upsample_shader;
+    Shader* hdr_to_ldr_shader;
     Cubemap* cubemap;
     CubemapTextureType cubemap_texture_type;
     float cubemap_texture_mipmap_level;
+    unsigned int bloom_fbo;
+    float bloom_filter_radius;
+    float bloom_strength;
+    bool bloom_activated;
+    std::vector<TextureAndSize> bloom_textures;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object;
     std::unordered_map<glm::u8vec3, GameObject*> id_color_to_game_object_transform3d;
     std::map<std::string, BaseModel*> loaded_models;

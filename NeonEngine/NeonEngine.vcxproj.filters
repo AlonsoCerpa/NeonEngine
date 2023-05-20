@@ -54,6 +54,15 @@
     <ClCompile Include="src\cubemap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\opengl_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bloom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\neon_engine.h">
@@ -122,6 +131,9 @@
     <ClInclude Include="src\logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\bloom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\phong_lighting.frag">
@@ -164,6 +176,15 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\brdf.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\bloom_downsample.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\bloom_upsample.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\hdr_to_ldr.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

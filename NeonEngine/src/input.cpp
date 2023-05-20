@@ -111,7 +111,6 @@ void Input::process_viewport_input() {
             rendering->last_selected_object = selected_object;
         }
         else {
-            std::cout << "skybox" << std::endl;
             selected_object = rendering->game_objects["skybox"];
             selected_object->set_select_state(true);
             rendering->last_selected_object = selected_object;

@@ -30,7 +30,7 @@ unsigned int create_environment_map_from_equirectangular_map(const std::string& 
                                                              int environment_map_width, int environment_map_height,
                                                              const glm::mat4& captureProjection, const std::vector<glm::mat4>& captureViews,
                                                              Shader* equirectangularToCubemapShader) {
-    // load the HDR environment map
+    // load the HDR equirectangular texture
     stbi_set_flip_vertically_on_load(true);
     int width, height, nrComponents;
     float* data = stbi_loadf(equirectangular_map.c_str(), &width, &height, &nrComponents, 0);
@@ -41,10 +41,10 @@ unsigned int create_environment_map_from_equirectangular_map(const std::string& 
     else { // nrComponents == 4
         format = GL_RGBA;
     }
-    unsigned int hdrTexture;
+    unsigned int equirectangularTexture;
     if (data) {
-        glGenTextures(1, &hdrTexture);
-        glBindTexture(GL_TEXTURE_2D, hdrTexture);
+        glGenTextures(1, &equirectangularTexture);
+        glBindTexture(GL_TEXTURE_2D, equirectangularTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, format, GL_FLOAT, data); // note how we specify the texture's data value to be float
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -77,7 +77,7 @@ unsigned int create_environment_map_from_equirectangular_map(const std::string& 
     equirectangularToCubemapShader->setInt("equirectangularMap", 0);
     equirectangularToCubemapShader->setMat4("projection", captureProjection);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, hdrTexture);
+    glBindTexture(GL_TEXTURE_2D, equirectangularTexture);
 
     glViewport(0, 0, environment_map_width, environment_map_height); // don't forget to configure the viewport to the capture dimensions
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);

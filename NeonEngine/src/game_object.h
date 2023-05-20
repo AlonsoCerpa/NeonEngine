@@ -69,7 +69,6 @@ public:
 
 class Light : public GameObject {
 public:
-    glm::vec3 light_color;
     float intensity;
     glm::vec3 ambient;
     glm::vec3 diffuse;

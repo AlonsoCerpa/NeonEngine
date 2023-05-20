@@ -39,14 +39,10 @@ public:
         glBindVertexArray(0);
 	}
 
-	void draw(Shader* shader, unsigned int texture_color_buffer, bool disable_depth_test) {
+	void draw(Shader* shader, bool disable_depth_test) {
         if (disable_depth_test) {
             glDisable(GL_DEPTH_TEST);
         }
-
-        glActiveTexture(GL_TEXTURE0);
-        shader->setInt("screen_texture", 0);
-        glBindTexture(GL_TEXTURE_2D, texture_color_buffer);	// use the color attachment texture as the texture of the quad plane
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);

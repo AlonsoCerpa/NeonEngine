@@ -31,7 +31,8 @@ void main()
     vec3 color = texture(equirectangularMap, uv).rgb;
 
     // Tone mapping to fix artifacts appearing when there exists an excessive shiny object in the environment map
-    color = color / (color + vec3(1.0));
+    color = sqrt(color + 1.0) - 1.0;
+    //color = color / (color + vec3(1.0));
     //color = aces_approx(color);
     
     FragColor = vec4(color, 1.0);

@@ -37,6 +37,9 @@ Rendering::Rendering() {
     prefilterShader = nullptr;
     selection_shader = nullptr;
     outline_shader = nullptr;
+    bloom_downsample_shader = nullptr;
+    bloom_upsample_shader = nullptr;
+    hdr_to_ldr_shader = nullptr;
     camera_viewport = new Camera((glm::vec3(0.0f, 0.0f, 3.0f)));
     near_camera_viewport = 0.1f;
     far_camera_viewport = 500.0f;
@@ -50,6 +53,9 @@ Rendering::Rendering() {
     loaded_materials["Default"] = nullptr;
     cubemap_texture_type = EnvironmentMap;
     cubemap_texture_mipmap_level = 0.0f;
+    bloom_filter_radius = 0.005f;
+    bloom_strength = 0.04f;
+    bloom_activated = true;
 
     // PBR parameters
     ENVIRONMENT_MAP_WIDTH = 2048;
@@ -106,7 +112,7 @@ void Rendering::set_opengl_state() {
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
-void Rendering::create_and_set_viewport_framebuffer() {
+void Rendering::setup_framebuffer_and_textures() {
     int texture_viewport_width = user_interface->texture_viewport_width;
     int texture_viewport_height = user_interface->texture_viewport_height;
 
@@ -120,16 +126,16 @@ void Rendering::create_and_set_viewport_framebuffer() {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
 
-    // Create and set Color Texture for main rendering
-    glGenTextures(1, &textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, color_texture_width, color_texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    // Create and set HDR Color Texture for main rendering
+    glGenTextures(1, &textureHDRColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureHDRColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, color_texture_width, color_texture_height, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Attach the Texture to the currently bound Framebuffer object
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureHDRColorbuffer, 0);
 
 
     // Create and set Color Texture for rendering the id colors
@@ -170,6 +176,30 @@ void Rendering::create_and_set_viewport_framebuffer() {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, texture_selected_color_buffer, 0);
 
 
+    // Create and set LDR Color Texture for main rendering
+    glGenTextures(1, &textureLDRColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureLDRColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, color_texture_width, color_texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Attach the Texture to the currently bound Framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, textureLDRColorbuffer, 0);
+
+
+    // Create and set HDR Bright Color Texture for main rendering
+    glGenTextures(1, &textureHDRBrightColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureHDRBrightColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, color_texture_width, color_texture_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Attach the Texture to the currently bound Framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, textureHDRBrightColorbuffer, 0);
+
+
     // Create and set Depth and Stencil Renderbuffer
     glGenRenderbuffers(1, &rboDepthStencil);
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepthStencil);
@@ -180,17 +210,55 @@ void Rendering::create_and_set_viewport_framebuffer() {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboDepthStencil);
 
     // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-    unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(4, attachments);
+    unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+    glDrawBuffers(6, attachments);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 
+    // UPDATE BLOOM TEXTURES SIZES
+    bloom_fbo = initialize_bloom(6, bloom_textures, texture_viewport_width, texture_viewport_height);
+
     // Bind to the default Framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
-    // UPDATE CURRENT DISPLAYED TEXTURE
-    user_interface->update_displayed_texture();
+void Rendering::resize_textures() {
+    int texture_viewport_width = user_interface->texture_viewport_width;
+    int texture_viewport_height = user_interface->texture_viewport_height;
+
+    // Resize main rendering textures
+    glBindTexture(GL_TEXTURE_2D, textureHDRColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, texture_viewport_width, texture_viewport_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+    glBindTexture(GL_TEXTURE_2D, texture_id_colors);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_viewport_width, texture_viewport_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glBindTexture(GL_TEXTURE_2D, texture_id_colors_transform3d);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_viewport_width, texture_viewport_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glBindTexture(GL_TEXTURE_2D, texture_selected_color_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_viewport_width, texture_viewport_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glBindTexture(GL_TEXTURE_2D, textureLDRColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture_viewport_width, texture_viewport_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glBindTexture(GL_TEXTURE_2D, textureHDRBrightColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, texture_viewport_width, texture_viewport_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+    // Resized depth and stencil buffer
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthStencil);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, texture_viewport_width, texture_viewport_height);
+
+    // Resize bloom textures
+    glm::vec2 texture_size(texture_viewport_width, texture_viewport_height);
+    for (int i = 0; i < bloom_textures.size(); i++) {
+        texture_size /= 2.0f;
+        bloom_textures[i].size = texture_size;
+
+        glBindTexture(GL_TEXTURE_2D, bloom_textures[i].texture_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, texture_size.x, texture_size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
 }
 
 void Rendering::set_viewport_shaders() {
@@ -204,6 +272,9 @@ void Rendering::set_viewport_shaders() {
     selection_shader = new Shader("shaders/vertices_3d_model.vert", "shaders/paint_selected.frag");
     outline_shader = new Shader("shaders/vertices_quad.vert", "shaders/edge_outlining.frag");
     skybox_shader = new Shader("shaders/skybox.vert", "shaders/skybox.frag");
+    bloom_downsample_shader = new Shader("shaders/vertices_quad.vert", "shaders/bloom_downsample.frag");
+    bloom_upsample_shader = new Shader("shaders/vertices_quad.vert", "shaders/bloom_upsample.frag");
+    hdr_to_ldr_shader = new Shader("shaders/vertices_quad.vert", "shaders/hdr_to_ldr.frag");
 }
 
 void Rendering::load_cubemap(const std::string& cubemap_name, const std::vector<std::string>& cubemap_paths, bool is_hdri) {
@@ -269,12 +340,12 @@ void Rendering::set_viewport_data() {
             load_cubemap(entry.path().stem().string(), { entry.path().string() }, true);
         }
     }
-    
+    /*
     for (const auto& entry : std::filesystem::directory_iterator("HDRIs/hdri_pack")) {
         if (entry.is_regular_file()) {
             load_cubemap(entry.path().stem().string(), { entry.path().string() }, true);
         }
-    }
+    }*/
 
     // Materials:
 
@@ -605,9 +676,10 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light1 = new PointLight("point_light1", "sphere");
     point_light1->type = TypePointLight;
     point_light1->position = glm::vec3(-10.0f, 10.0f, 10.0f);
-    point_light1->albedo = glm::vec3(0.0f, 1.0f, 0.0f);
-    point_light1->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
+    point_light1->albedo = glm::vec3(1.0f, 0.0f, 0.0f);
     point_light1->intensity = 5.0f;
+    point_light1->render_only_ambient = true;
+    point_light1->render_one_color = true;
     point_light1->set_model_matrices_standard();
     game_objects[point_light1->name] = point_light1;
     point_lights[point_light1->name] = point_light1;
@@ -616,8 +688,10 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light2 = new PointLight("point_light2", "sphere");
     point_light2->type = TypePointLight;
     point_light2->position = glm::vec3(10.0f, 10.0f, 10.0f);
-    point_light2->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
+    point_light2->albedo = glm::vec3(0.0f, 1.0f, 0.0f);
     point_light2->intensity = 5.0f;
+    point_light2->render_only_ambient = true;
+    point_light2->render_one_color = true;
     point_light2->set_model_matrices_standard();
     game_objects[point_light2->name] = point_light2;
     point_lights[point_light2->name] = point_light2;
@@ -626,8 +700,10 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light3 = new PointLight("point_light3", "sphere");
     point_light3->type = TypePointLight;
     point_light3->position = glm::vec3(-10.0f, -10.0f, 10.0f);
-    point_light3->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
-    point_light3->intensity = 5.0f;
+    point_light3->albedo = glm::vec3(0.0f, 0.0f, 1.0f);
+    point_light3->intensity = 25.0f;
+    point_light3->render_only_ambient = true;
+    point_light3->render_one_color = true;
     point_light3->set_model_matrices_standard();
     game_objects[point_light3->name] = point_light3;
     point_lights[point_light3->name] = point_light3;
@@ -636,8 +712,10 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light4 = new PointLight("point_light4", "sphere");
     point_light4->type = TypePointLight;
     point_light4->position = glm::vec3(10.0f, -10.0f, 10.0f);
-    point_light4->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
+    point_light4->albedo = glm::vec3(1.0f, 1.0f, 1.0f);
     point_light4->intensity = 5.0f;
+    point_light4->render_only_ambient = true;
+    point_light4->render_one_color = true;
     point_light4->set_model_matrices_standard();
     game_objects[point_light4->name] = point_light4;
     point_lights[point_light4->name] = point_light4;
@@ -647,7 +725,7 @@ void Rendering::initialize_game_objects() {
     directional_light1->type = TypeDirectionalLight;
     directional_light1->position = glm::vec3(-5.0f, 5.0f, -3.0f);
     directional_light1->ambient = glm::vec3(0.3f);
-    directional_light1->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
+    directional_light1->albedo = glm::vec3(1.0f, 1.0f, 1.0f);
     directional_light1->intensity = 1.0f;
     directional_light1->specular = glm::vec3(0.9f);
     directional_light1->direction = glm::vec3(3.0f, -4.0f, -3.0f);
@@ -658,13 +736,12 @@ void Rendering::initialize_game_objects() {
 
     SpotLight* spot_light1 = new SpotLight("spot_light1", "sphere");
     spot_light1->type = TypeSpotLight;
-    spot_light1->position = glm::vec3(-5.0f, -5.0f, -3.0f);
-    spot_light1->albedo = glm::vec3(1.0f, 1.0f, 0.0f);
+    spot_light1->position = glm::vec3(-3.0f, 0.5f, 1.2f);
+    spot_light1->albedo = glm::vec3(1.0f, 1.0f, 1.0f);
     spot_light1->ambient = glm::vec3(0.0f);
-    spot_light1->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
     spot_light1->intensity = 300.0f;
     spot_light1->specular = glm::vec3(1.0f);
-    spot_light1->direction = glm::vec3(5.0f, 5.0f, -3.0f);
+    spot_light1->direction = glm::normalize(glm::vec3(10.0f, 40.0f, -22.0f));
     spot_light1->set_model_matrices_standard();
     game_objects[spot_light1->name] = spot_light1;
     spot_lights[spot_light1->name] = spot_light1;
@@ -710,8 +787,8 @@ void Rendering::render_viewport() {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-    unsigned int attachments0[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(4, attachments0);
+    unsigned int attachments0[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+    glDrawBuffers(6, attachments0);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -720,9 +797,6 @@ void Rendering::render_viewport() {
     projection = glm::perspective(glm::radians(camera_viewport->Zoom), (float)texture_viewport_width / (float)texture_viewport_height, near_camera_viewport, far_camera_viewport);
     view = camera_viewport->GetViewMatrix();
     view_projection = projection * view;
-
-    unsigned int attachments1[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-    glDrawBuffers(3, attachments1);
 
     Shader* lighting_shader = pbr_shader;
     //Shader* lighting_shader = phong_shader;
@@ -752,7 +826,8 @@ void Rendering::render_viewport() {
     for (auto it = point_lights.begin(); it != point_lights.end(); it++, idx_point_light++) {
         lighting_shader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].position", it->second->position);
         lighting_shader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].ambient", it->second->ambient);
-        lighting_shader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].radiance", it->second->light_color * it->second->intensity);
+        lighting_shader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].light_color", it->second->albedo);
+        lighting_shader->setFloat("pointLights[" + std::to_string(idx_point_light) + "].intensity", it->second->intensity);
         lighting_shader->setVec3("pointLights[" + std::to_string(idx_point_light) + "].specular", it->second->specular);
         lighting_shader->setFloat("pointLights[" + std::to_string(idx_point_light) + "].constant", it->second->constant);
         lighting_shader->setFloat("pointLights[" + std::to_string(idx_point_light) + "].linear", it->second->linear);
@@ -763,7 +838,8 @@ void Rendering::render_viewport() {
     for (auto it = directional_lights.begin(); it != directional_lights.end(); it++, idx_directional_light++) {
         lighting_shader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].direction", it->second->direction);
         lighting_shader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].ambient", it->second->ambient);
-        lighting_shader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].radiance", it->second->light_color * it->second->intensity);
+        lighting_shader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].light_color", it->second->albedo);
+        lighting_shader->setFloat("directionalLights[" + std::to_string(idx_directional_light) + "].intensity", it->second->intensity);
         lighting_shader->setVec3("directionalLights[" + std::to_string(idx_directional_light) + "].specular", it->second->specular);
     }
 
@@ -772,7 +848,8 @@ void Rendering::render_viewport() {
         lighting_shader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].position", it->second->position);
         lighting_shader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].direction", it->second->direction);
         lighting_shader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].ambient", it->second->ambient);
-        lighting_shader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].radiance", it->second->light_color * it->second->intensity);
+        lighting_shader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].light_color", it->second->albedo);
+        lighting_shader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].intensity", it->second->intensity);
         lighting_shader->setVec3("spotLights[" + std::to_string(idx_spot_light) + "].specular", it->second->specular);
         lighting_shader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].constant", it->second->constant);
         lighting_shader->setFloat("spotLights[" + std::to_string(idx_spot_light) + "].linear", it->second->linear);
@@ -783,49 +860,84 @@ void Rendering::render_viewport() {
 
     // Render the game objects with the selected lighting shading and also render the unique Color IDs of each game object
     // (later for the selection technique: Color Picking)
-
+    unsigned int attachments1[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT5 };
+    glDrawBuffers(4, attachments1);
     lighting_shader->setInt("is_transform3d", 0);
-    lighting_shader->setFloat("exposure", exposure);
-
     for (auto it = game_objects.begin(); it != game_objects.end(); it++) {
         GameObject* game_object = it->second;
         if (game_object->type != TypeSkybox) {
+            if (game_object->type == TypeBaseModel) {
+                lighting_shader->setFloat("intensity", 1.0);
+            }
+            else { // It is a light
+                lighting_shader->setFloat("intensity", ((Light*)game_object)->intensity);
+            }
             game_object->draw(lighting_shader, false);
         }
     }
 
+    // Draw skybox
+    unsigned int attachments_skybox[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT5 };
+    glDrawBuffers(2, attachments_skybox);
+    view_skybox = glm::mat4(glm::mat3(view)); // remove translation from the view matrix so it doesn't affect the skybox
+    view_projection_skybox = projection * view_skybox;
+    skybox_shader->use();
+    //skybox_shader->setInt("is_hdri", cubemap->umap_name_to_cubemap_data[((Skybox*)game_objects["skybox"])->cubemap_name].is_hdri);
+    //skybox_shader->setFloat("exposure", exposure);
+    skybox_shader->setMat4("view_projection", view_projection_skybox);
+    skybox_shader->setFloat("mipmap_level", cubemap_texture_mipmap_level);
+    cubemap->draw(skybox_shader, ((Skybox*)game_objects["skybox"])->cubemap_name, cubemap_texture_type);
+
+    // Apply bloom to the rendered HDR bright color texture
+    if (bloom_activated) {
+        unsigned int attachments_bloom[1] = { GL_COLOR_ATTACHMENT0 };
+        glDrawBuffers(1, attachments_bloom);
+        glBindFramebuffer(GL_FRAMEBUFFER, bloom_fbo);
+        bloom_downsampling(bloom_downsample_shader, textureHDRBrightColorbuffer, bloom_textures, texture_viewport_width, texture_viewport_height);
+        bloom_upsampling(bloom_upsample_shader, bloom_textures, bloom_filter_radius);
+        glViewport(0, 0, texture_viewport_width, texture_viewport_height);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    }
+
     // Render only the last selected object (if it exists) to later outline the shape of this object
-    unsigned int attachments2[1] = { GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(1, attachments2);
+    unsigned int attachments3[1] = { GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(1, attachments3);
     selection_shader->use();
     selection_shader->setMat4("view_projection", view_projection);
     if (last_selected_object != nullptr && last_selected_object->type != TypeSkybox) {
         last_selected_object->draw(selection_shader, true);
     }
 
-    // Draw skybox
-    unsigned int attachments3[1] = { GL_COLOR_ATTACHMENT0 }; // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-    glDrawBuffers(1, attachments3);
-    view_skybox = glm::mat4(glm::mat3(view)); // remove translation from the view matrix so it doesn't affect the skybox
-    view_projection_skybox = projection * view_skybox;
-    skybox_shader->use();
-    skybox_shader->setInt("is_hdri", cubemap->umap_name_to_cubemap_data[((Skybox*)game_objects["skybox"])->cubemap_name].is_hdri);
-    skybox_shader->setFloat("exposure", exposure);
-    skybox_shader->setMat4("view_projection", view_projection_skybox);
-    skybox_shader->setFloat("mipmap_level", cubemap_texture_mipmap_level);
-    cubemap->draw(skybox_shader, ((Skybox*)game_objects["skybox"])->cubemap_name, cubemap_texture_type);
+    // Convert HDR color texture to LDR
+    unsigned int attachments4[1] = { GL_COLOR_ATTACHMENT4 }; // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+    glDrawBuffers(1, attachments4);
+    hdr_to_ldr_shader->use();
+    hdr_to_ldr_shader->setFloat("exposure", exposure);
+    hdr_to_ldr_shader->setInt("hdr_texture", 0);
+    hdr_to_ldr_shader->setInt("bloom_activated", bloom_activated);
+    hdr_to_ldr_shader->setFloat("bloomStrength", bloom_strength);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureHDRColorbuffer);
+    hdr_to_ldr_shader->setInt("bloom_texture", 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, bloom_textures[0].texture_id);
+    screen_quad->draw(hdr_to_ldr_shader, false);
 
     // Draw border outlining the selected object (if it exists one)
     outline_shader->use();
     outline_shader->setVec2("pixel_size", glm::vec2(1.0f / user_interface->texture_viewport_width, 1.0f / user_interface->texture_viewport_height));
     outline_shader->setVec3("outline_color", outline_color);
-    screen_quad->draw(outline_shader, texture_selected_color_buffer, true);
+    outline_shader->setInt("screen_texture", 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_selected_color_buffer);
+    screen_quad->draw(outline_shader, true);
 
     // Clear the depth buffer so the Transform3D is drawn over everything
     glClear(GL_DEPTH_BUFFER_BIT);
 
     // Draw 3D transforms if there is a selected object
-    glDrawBuffers(3, attachments1);
+    unsigned int attachments5[4] = { GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT5 };
+    glDrawBuffers(4, attachments5);
     lighting_shader->use();
     lighting_shader->setInt("is_transform3d", 1);
     if (last_selected_object != nullptr && last_selected_object->type != TypeSkybox) {
@@ -949,6 +1061,9 @@ void Rendering::clean() {
     delete selection_shader;
     delete outline_shader;
     delete skybox_shader;
+    delete bloom_downsample_shader;
+    delete bloom_upsample_shader;
+    delete hdr_to_ldr_shader;
     for (auto it = loaded_models.begin(); it != loaded_models.end(); it++) {
         delete it->second;
     }
@@ -964,7 +1079,7 @@ void Rendering::clean() {
 
 void Rendering::clean_viewport_framebuffer() {
     glDeleteFramebuffers(1, &framebuffer);
-    glDeleteTextures(1, &textureColorbuffer);
+    glDeleteTextures(1, &textureHDRColorbuffer);
     glDeleteTextures(1, &texture_id_colors);
     glDeleteTextures(1, &texture_id_colors_transform3d);
     glDeleteTextures(1, &texture_selected_color_buffer);
