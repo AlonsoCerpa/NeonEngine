@@ -1078,10 +1078,23 @@ void Rendering::clean() {
 }
 
 void Rendering::clean_viewport_framebuffer() {
+    // Clean main rendering
     glDeleteFramebuffers(1, &framebuffer);
     glDeleteTextures(1, &textureHDRColorbuffer);
     glDeleteTextures(1, &texture_id_colors);
-    glDeleteTextures(1, &texture_id_colors_transform3d);
     glDeleteTextures(1, &texture_selected_color_buffer);
+    glDeleteTextures(1, &textureLDRColorbuffer);
+    glDeleteTextures(1, &textureHDRBrightColorbuffer);
+    glDeleteTextures(1, &texture_id_colors_transform3d);
     glDeleteRenderbuffers(1, &rboDepthStencil);
+
+    // Clean PBR
+    glDeleteFramebuffers(1, &captureFBO);
+    glDeleteTextures(1, &brdfLUTTexture);
+
+    // Clean bloom
+    glDeleteFramebuffers(1, &bloom_fbo);
+    for (int i = 0; i < bloom_textures.size(); i++) {
+        glDeleteTextures(1, &(bloom_textures[i].texture_id));
+    }
 }
