@@ -88,6 +88,7 @@ public:
     Shader* hdr_to_ldr_shader;
     Cubemap* cubemap;
     CubemapTextureType cubemap_texture_type;
+    float emission_strength;
     float cubemap_texture_mipmap_level;
     unsigned int bloom_fbo;
     float bloom_filter_radius;

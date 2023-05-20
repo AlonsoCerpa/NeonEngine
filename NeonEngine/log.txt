@@ -1,6 +1,6 @@
-2023-05-20 16:31:46 Loading model: knight
-2023-05-20 16:31:46 Model loaded in 0.354591 seconds
-2023-05-20 16:31:46 Loading model: mutant
-2023-05-20 16:31:47 Model loaded in 0.398365 seconds
-2023-05-20 16:31:47 Loading model: android
-2023-05-20 16:31:49 Model loaded in 2.193132 seconds
+2023-05-20 18:09:04 Loading model: knight
+2023-05-20 18:09:04 Model loaded in 0.354199 seconds
+2023-05-20 18:09:04 Loading model: mutant
+2023-05-20 18:09:04 Model loaded in 0.392867 seconds
+2023-05-20 18:09:04 Loading model: android
+2023-05-20 18:09:07 Model loaded in 2.226358 seconds

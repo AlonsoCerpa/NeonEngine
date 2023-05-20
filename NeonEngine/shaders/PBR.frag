@@ -29,6 +29,8 @@ uniform float metalness_model;
 uniform float roughness_model;
 uniform vec3 emission_model;
 
+uniform float emission_strength;
+
 // IBL
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
@@ -160,7 +162,7 @@ void main() {
         }
         vec3 emission = emission_model;
         if (has_texture_emission == 1) {
-            emission = texture(texture_emission, TexCoords).rgb;
+            emission = pow(texture(texture_emission, TexCoords).rgb, vec3(2.2));
         }
         float ambient_occlusion = 1.0;
         if (has_texture_ambient_occlusion == 1) {
@@ -314,7 +316,7 @@ void main() {
     
         vec3 color = ambient + Lo;
 
-        FragColor = vec4(color , 1.0);
+        FragColor = vec4(color + emission_strength * emission , 1.0);
     }
 
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));

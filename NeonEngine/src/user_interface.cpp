@@ -348,6 +348,15 @@ void UserInterface::render_app() {
             ImGui::DragFloat("##BloomStrength", &(rendering->bloom_strength), 0.001f, 0.0f, std::numeric_limits<float>::max());
         }
 
+        // Row 4: Emission Strength
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Emission strength");
+
+        ImGui::TableSetColumnIndex(1);
+        ImGui::DragFloat("##EmissionStrength", &(rendering->emission_strength), 0.2f, 0.0f, std::numeric_limits<float>::max());
+
         ImGui::PopItemWidth();
 
         ImGui::EndTable();

@@ -159,6 +159,12 @@ void Input::process_viewport_input() {
             firstMouse = true;
         }
     }
+
+    if (rendering->last_selected_object != nullptr && ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+        rendering->camera_viewport->Position += rendering->last_selected_object->position - rendering->camera_viewport->Position;
+        rendering->camera_viewport->Position -= 10.0f * rendering->camera_viewport->Front;
+        std::cout << "F pressed" << std::endl;
+    }
 }
 
 void Input::mouse_rotate_camera() {

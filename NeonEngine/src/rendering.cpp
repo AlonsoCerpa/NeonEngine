@@ -56,6 +56,7 @@ Rendering::Rendering() {
     bloom_filter_radius = 0.005f;
     bloom_strength = 0.04f;
     bloom_activated = true;
+    emission_strength = 8.0f;
 
     // PBR parameters
     ENVIRONMENT_MAP_WIDTH = 2048;
@@ -676,7 +677,7 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light1 = new PointLight("point_light1", "sphere");
     point_light1->type = TypePointLight;
     point_light1->position = glm::vec3(-10.0f, 10.0f, 10.0f);
-    point_light1->albedo = glm::vec3(1.0f, 0.0f, 0.0f);
+    point_light1->albedo = glm::vec3(170.0f/255.0f, 0.0f/255.0f, 255.0f/255.0f);
     point_light1->intensity = 5.0f;
     point_light1->render_only_ambient = true;
     point_light1->render_one_color = true;
@@ -688,7 +689,7 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light2 = new PointLight("point_light2", "sphere");
     point_light2->type = TypePointLight;
     point_light2->position = glm::vec3(10.0f, 10.0f, 10.0f);
-    point_light2->albedo = glm::vec3(0.0f, 1.0f, 0.0f);
+    point_light2->albedo = glm::vec3(76.0f/255.0f, 255.0f/255.0f, 0.0f/255.0f);
     point_light2->intensity = 5.0f;
     point_light2->render_only_ambient = true;
     point_light2->render_one_color = true;
@@ -700,7 +701,7 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light3 = new PointLight("point_light3", "sphere");
     point_light3->type = TypePointLight;
     point_light3->position = glm::vec3(-10.0f, -10.0f, 10.0f);
-    point_light3->albedo = glm::vec3(0.0f, 0.0f, 1.0f);
+    point_light3->albedo = glm::vec3(255.0f/255.0f, 98.0f/255.0f, 0.0f/255.0f);
     point_light3->intensity = 25.0f;
     point_light3->render_only_ambient = true;
     point_light3->render_one_color = true;
@@ -712,7 +713,7 @@ void Rendering::initialize_game_objects() {
     PointLight* point_light4 = new PointLight("point_light4", "sphere");
     point_light4->type = TypePointLight;
     point_light4->position = glm::vec3(10.0f, -10.0f, 10.0f);
-    point_light4->albedo = glm::vec3(1.0f, 1.0f, 1.0f);
+    point_light4->albedo = glm::vec3(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f);
     point_light4->intensity = 5.0f;
     point_light4->render_only_ambient = true;
     point_light4->render_one_color = true;
@@ -821,6 +822,8 @@ void Rendering::render_viewport() {
     lighting_shader->setInt("num_point_lights", point_lights.size());
     lighting_shader->setInt("num_directional_lights", directional_lights.size());
     lighting_shader->setInt("num_spot_lights", spot_lights.size());
+
+    lighting_shader->setFloat("emission_strength", emission_strength);
 
     int idx_point_light = 0;
     for (auto it = point_lights.begin(); it != point_lights.end(); it++, idx_point_light++) {
