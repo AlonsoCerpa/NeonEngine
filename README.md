@@ -15,6 +15,10 @@ The currently supported features are:
 - Change materials of the game objects via the UI.
 - List all the current game objects in the UI.
 
-![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/neon_engine.png)
+Here is an image showing Neon Engine:
 
-![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/neon_engine.gif)
+![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine.png)
+
+Here is a gif showing a short demo of Neon Engine:
+
+![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine.gif)
