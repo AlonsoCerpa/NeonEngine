@@ -10,6 +10,7 @@ The currently supported features are:
 - Bloom.
 - Editable parameters of the Game Objects and the World via the User Interface.
 - Load HDRI maps and show them as skyboxes.
+- Rendering basic shapes: Cones, cylinders, cubes, spheres and disks.
 - Translate, rotate and scale the game objects via widgets inside the viewport.
 - Load materials.
 - Change materials of the game objects via the UI.
