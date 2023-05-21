@@ -16,7 +16,7 @@ The currently supported features are:
 - List all the current game objects in the UI.
 
 Here is an image showing Neon Engine:
-![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/iamges/neon_engine.png)
+![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine.png)
 
 Here is a gif showing a short demo of Neon Engine:
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine.gif)
