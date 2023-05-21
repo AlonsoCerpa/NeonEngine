@@ -32,8 +32,8 @@ NeonEngine::NeonEngine() {
     glfw_minor_version = 6;
     glsl_version = "#version 460 core";
     window_title = "Neon Engine";
-    window_width = 2560;
-    window_height = 1440;
+    window_width = 3840;
+    window_height = 2160;
     clear_color = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
     
     delta_time_seconds = 0.0f;
