@@ -14,6 +14,7 @@ The currently supported features are:
 - Load materials.
 - Change materials of the game objects via the UI.
 - List all the current game objects in the UI.
+- Etc.
 
 Screenshot of Neon Engine:
 
