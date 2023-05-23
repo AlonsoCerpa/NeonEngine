@@ -20,11 +20,13 @@ The currently supported features are:
 Screenshot of Neon Engine:
 
 ![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine.png)
+<br />
 
 
 Demo doing transformations in Neon Engine:
 
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine.gif)
+<br />
 
 
 Demo changing the HDRI maps in Neon Engine:
