@@ -19,7 +19,7 @@ The currently supported features are:
 
 Screenshot of Neon Engine:
 
-![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine.png)
+![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine_image1.png)
 <br />
 <br />
 
@@ -46,14 +46,14 @@ Screenshot of Neon Engine:
 
 Demo doing transformations in Neon Engine:
 
-![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine.gif)
+![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine_gif1.gif)
 <br />
 <br />
 
 
 Demo changing the HDRI maps in Neon Engine:
 
-![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine2.gif)
+![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine2_gif2.gif)
 <br />
 <br />
 
