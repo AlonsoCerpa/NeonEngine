@@ -25,7 +25,9 @@ Screenshot of Neon Engine:
 
 ## Requirements
 
-OS: Windows, tested with Windows 11.
+OS: Windows, tested with Windows 11
+IDE: Visual Studio, tested with Visual Studio 2022
+Package manager: vcpkg
 
 ## Installation
 1. Download the following libraries using vcpkg:
@@ -35,7 +37,6 @@ OS: Windows, tested with Windows 11.
 - glfw3
 - imgui
 - stb
-
 2. Download Visual Studio 2022.
 3. Download this repository.
 4. Open the file located in the following path: NeonEngine/NeonEngine.sln using Visual Studio 2022.
