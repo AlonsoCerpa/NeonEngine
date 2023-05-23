@@ -25,9 +25,9 @@ Screenshot of Neon Engine:
 
 ## Requirements
 
-OS: Windows, tested with Windows 11<br />
-IDE: Visual Studio, tested with Visual Studio 2022<br />
-Package manager: vcpkg
+- OS: Windows, tested with Windows 11
+- IDE: Visual Studio, tested with Visual Studio 2022
+- Package manager: vcpkg
 
 ## Installation
 1. Download the following libraries using vcpkg:
