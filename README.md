@@ -31,7 +31,7 @@ Screenshot of Neon Engine:
 
 ## Installation
 1. Download and install vcpkg
-2. Download and install the following libraries using vcpkg:
+2. Download and install the following libraries using vcpkg (tested with the 64 bit versions):
 - glad
 - glm
 - assimp
