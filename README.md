@@ -10,15 +10,23 @@ The currently supported features are:
 - Bloom.
 - Editable parameters of the Game Objects and the World via the User Interface.
 - Load HDRI maps and show them as skyboxes.
+- Rendering basic shapes: Cones, cylinders, cubes, spheres and disks.
 - Translate, rotate and scale the game objects via widgets inside the viewport.
 - Load materials.
 - Change materials of the game objects via the UI.
 - List all the current game objects in the UI.
+- Etc.
 
-Here is an image showing Neon Engine:
+Screenshot of Neon Engine:
 
 ![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine.png)
 
-Here is a gif showing a short demo of Neon Engine:
+
+Demo doing transformations in Neon Engine:
 
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine.gif)
+
+
+Demo changing the HDRI maps in Neon Engine:
+
+![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine2.gif)
