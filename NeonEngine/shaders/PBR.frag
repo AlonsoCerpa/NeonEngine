@@ -318,12 +318,16 @@ void main() {
 
         FragColor = vec4(color + emission_strength * emission , 1.0);
     }
+    if (isinf(FragColor.x) == true || isinf(FragColor.y) == true || isinf(FragColor.z) == true ||
+        isnan(FragColor.x) == true || isnan(FragColor.y) == true || isnan(FragColor.z) == true) {
+        FragColor = vec4(0.0001, 0.0001, 0.0001, 1.0);
+    }
 
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > 1.0)
         BrightColor = vec4(FragColor.rgb, 1.0);
 	else
-		BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+		BrightColor = vec4(0.0001, 0.0001, 0.0001, 1.0);
 
     // For lights, we render the object with only the albedo color, but the bright color takes
     // into consideration both the albedo color and the intensity
