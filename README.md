@@ -23,6 +23,10 @@ Screenshot of Neon Engine:
 <br />
 <br />
 
+## Requirements
+
+OS: Windows, tested with Windows 11.
+
 ## Installation
 1. Download the following libraries using vcpkg:
 - glad
