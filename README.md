@@ -18,21 +18,18 @@ The currently supported features are:
 - Etc.
 
 Screenshot of Neon Engine:
-
 ![Neon Engine screenshot](https://github.com/AlonsoCerpa/NeonEngine/blob/master/images/neon_engine.png)
 
 
 Demo doing transformations in Neon Engine:
-
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine.gif)
 
 
 Demo changing the HDRI maps in Neon Engine:
-
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine2.gif)
 <br />
 <br />
 <br />
-YouTube video of a Neon Engine demo:
 
+YouTube video of a demo of Neon Engine:
 [![Neon Engine demo video](https://img.youtube.com/vi/rJXNfAThIbU/maxresdefault.jpg)](https://www.youtube.com/watch?v=rJXNfAThIbU)
