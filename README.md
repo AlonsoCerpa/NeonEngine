@@ -36,7 +36,6 @@ Demo changing the HDRI maps in Neon Engine:
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine2.gif)
 <br />
 <br />
-<br />
 
 
 YouTube video of a demo of Neon Engine:
