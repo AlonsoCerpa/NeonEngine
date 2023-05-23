@@ -23,6 +23,19 @@ Screenshot of Neon Engine:
 <br />
 <br />
 
+## Installation
+1. Download the following libraries using vcpkg:
+- glad
+- glm
+- assimp
+- glfw3
+- imgui
+- stb
+
+2. Download Visual Studio 2022.
+3. Download this repository.
+4. Open the file located in the following path: NeonEngine/NeonEngine.sln using Visual Studio 2022.
+
 
 Demo doing transformations in Neon Engine:
 
