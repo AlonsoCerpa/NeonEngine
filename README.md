@@ -30,3 +30,5 @@ Demo doing transformations in Neon Engine:
 Demo changing the HDRI maps in Neon Engine:
 
 ![Neon Engine short demo](https://github.com/AlonsoCerpa/NeonEngine/blob/master/gifs/neon_engine2.gif)
+
+[![Neon Engine demo video](https://img.youtube.com/vi/rJXNfAThIbU/maxresdefault.jpg)](https://www.youtube.com/watch?v=rJXNfAThIbU)
