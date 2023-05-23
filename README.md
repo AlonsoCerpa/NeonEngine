@@ -30,7 +30,7 @@ Screenshot of Neon Engine:
 - Package manager: vcpkg
 
 ## Installation
-1. Download and install vcpkg.
+1. Download and install vcpkg
 2. Download and install the following libraries using vcpkg:
 - glad
 - glm
@@ -38,8 +38,8 @@ Screenshot of Neon Engine:
 - glfw3
 - imgui
 - stb
-3. Download and install Visual Studio 2022.
-4. Download this repository.
+3. Download and install Visual Studio 2022
+4. Download this repository
 5. Using Visual Studio 2022, open the Visual Studio solution file of this repo located in the following path: NeonEngine/NeonEngine.sln
 
 ## Demos
