@@ -1,6 +1,6 @@
 # NeonEngine
 
-Neon Engine is a 3D Game Engine in C++ using OpenGL, ImGui and Assimp.
+Neon Engine is a 3D Game Engine in C++ using OpenGL, glm, ImGui and Assimp.
 
 The currently supported features are:
 - PBR shading.
