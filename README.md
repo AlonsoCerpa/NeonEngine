@@ -61,3 +61,5 @@ Demo changing the HDRI maps in Neon Engine:
 YouTube video of a demo of Neon Engine:
 
 [![Neon Engine demo video](https://img.youtube.com/vi/rJXNfAThIbU/maxresdefault.jpg)](https://www.youtube.com/watch?v=rJXNfAThIbU)
+
+© [2023] Todos los derechos reservados. Queda prohibida la reproducción, distribución, venta o cualquier otro uso no autorizado del contenido de este proyecto, sin el previo consentimiento por escrito del titular de los derechos de autor.
