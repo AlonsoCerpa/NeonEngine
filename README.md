@@ -62,4 +62,4 @@ YouTube video of a demo of Neon Engine:
 
 [![Neon Engine demo video](https://img.youtube.com/vi/rJXNfAThIbU/maxresdefault.jpg)](https://www.youtube.com/watch?v=rJXNfAThIbU)
 
-© [2023] Todos los derechos reservados. Queda prohibida la reproducción, distribución, venta o cualquier otro uso no autorizado del contenido de este proyecto, sin el previo consentimiento por escrito del titular de los derechos de autor.
+© [2023]. All rights reserved. Reproduction, distribution, sale, or any unauthorized use of the content in this project is strictly prohibited without the prior written consent of the copyright holder.
